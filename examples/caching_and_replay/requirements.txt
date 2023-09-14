@@ -1,2 +1,0 @@
-mesa
-git+https://github.com/Logende/mesa-replay@main#egg=Mesa-Replay
