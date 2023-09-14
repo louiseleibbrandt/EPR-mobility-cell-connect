@@ -29,17 +29,8 @@ class Commuter(mg.GeoAgent):
     start_time_m: int
     end_time_h: int  # time to leave work, hour and minute
     end_time_m: int
-    work_friends_id: list[int]  # set of friends at work
     status: str  # work, home, or transport
-    testing: bool  # a temp variable used in identifying friends
-    happiness_home: float
-    happiness_work: float
-    MIN_FRIENDS: int
-    MAX_FRIENDS: int
-    HAPPINESS_INCREASE: float
-    HAPPINESS_DECREASE: float
     SPEED: float
-    CHANCE_NEW_FRIEND: float  # percent chance to make a new friend every 5 min
 
     def __init__(self, unique_id, model, geometry, crs) -> None:
         super().__init__(unique_id, model, geometry, crs)
@@ -50,74 +41,26 @@ class Commuter(mg.GeoAgent):
         self.start_time_m = np.random.randint(0, 12) * 5
         self.end_time_h = self.start_time_h + 8  # will work for 8 hours
         self.end_time_m = self.start_time_m
-        self.happiness_work = 100.0
-        self.happiness_home = 100.0
-        self.work_friends_id = []
-        self.testing = False
 
     def __repr__(self) -> str:
         return (
             f"Commuter(unique_id={self.unique_id}, geometry={self.geometry}, "
-            f"status={self.status}, num_home_friends={self.num_home_friends}, "
-            f"num_work_friends={len(self.work_friends_id)})"
         )
-
-    @property
-    def num_home_friends(self) -> int:
-        return self.model.space.home_counter[self.my_home.centroid]
-
-    @property
-    def num_work_friends(self) -> int:
-        return len(self.work_friends_id)
 
     def set_home(self, new_home: Building) -> None:
         old_home_pos = self.my_home.centroid if self.my_home else None
         self.my_home = new_home
-        self.happiness_home = 100.0
         self.model.space.update_home_counter(
             old_home_pos=old_home_pos, new_home_pos=self.my_home.centroid
         )
 
     def set_work(self, new_work: Building) -> None:
         self.my_work = new_work
-        self.work_friends_id = []
-        self.happiness_work = 100.0
 
     def step(self) -> None:
-        self._check_happiness()
         self._prepare_to_move()
         self._move()
-        self._make_friends_at_work()
 
-    def _check_happiness(self) -> None:
-        if self.status == "work":
-            if len(self.work_friends_id) > self.MAX_FRIENDS:
-                self.happiness_work -= self.HAPPINESS_DECREASE * (
-                    len(self.work_friends_id) - self.MAX_FRIENDS
-                )
-            else:
-                if len(self.work_friends_id) < self.MIN_FRIENDS:
-                    self.happiness_work -= self.HAPPINESS_DECREASE * (
-                        self.MIN_FRIENDS - len(self.work_friends_id)
-                    )
-                else:
-                    self.happiness_work += self.HAPPINESS_INCREASE
-            if self.happiness_work < 0.0:
-                self._relocate_work()
-        elif self.status == "home":
-            if self.num_home_friends > self.MAX_FRIENDS:
-                self.happiness_home -= self.HAPPINESS_DECREASE * (
-                    self.num_home_friends - self.MAX_FRIENDS
-                )
-            else:
-                if self.num_home_friends < self.MIN_FRIENDS:
-                    self.happiness_home -= self.HAPPINESS_DECREASE * (
-                        self.MIN_FRIENDS - self.num_home_friends
-                    )
-                else:
-                    self.happiness_home += self.HAPPINESS_INCREASE
-            if self.happiness_home < 0.0:
-                self._relocate_home()
 
     def _prepare_to_move(self) -> None:
         # start going to work
@@ -211,23 +154,3 @@ class Commuter(mg.GeoAgent):
             )
             self.my_path = list(redistributed_path_in_degree.coords)
 
-    def _make_friends_at_work(self) -> None:
-        if self.status == "work":
-            for work_friend_id in self.work_friends_id:
-                self.model.space.get_commuter_by_id(work_friend_id).testing = True
-            commuters_to_check = [
-                c
-                for c in self.model.space.get_commuters_by_pos(
-                    (self.geometry.x, self.geometry.y)
-                )
-                if not c.testing
-            ]
-            if (
-                commuters_to_check
-                and np.random.uniform(0.0, 100.0) < self.CHANCE_NEW_FRIEND
-            ):
-                target_friend = random.choice(commuters_to_check)
-                target_friend.work_friends_id.append(self.unique_id)
-                self.work_friends_id.append(target_friend.unique_id)
-            for work_friend_id in self.work_friends_id:
-                self.model.space.get_commuter_by_id(work_friend_id).testing = False

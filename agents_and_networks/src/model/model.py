@@ -25,20 +25,6 @@ def get_num_commuters_by_status(model, status: str) -> int:
     return len(commuters)
 
 
-def get_total_friendships_by_type(model, friendship_type: str) -> int:
-    if friendship_type == "home":
-        num_friendships = [
-            commuter.num_home_friends for commuter in model.schedule.agents
-        ]
-    elif friendship_type == "work":
-        num_friendships = [
-            commuter.num_work_friends for commuter in model.schedule.agents
-        ]
-    else:
-        raise ValueError(
-            f"Unsupported friendship type: {friendship_type}. Must be home or work."
-        )
-    return sum(num_friendships)
 
 
 class AgentsAndNetworks(mesa.Model):
@@ -60,7 +46,7 @@ class AgentsAndNetworks(mesa.Model):
 
     def __init__(
         self,
-        campus: str,
+        region: str,
         data_crs: str,
         buildings_file: str,
         walkway_file: str,
@@ -69,12 +55,7 @@ class AgentsAndNetworks(mesa.Model):
         driveway_file: str,
         num_commuters,
         step_duration,
-        commuter_min_friends=5,
-        commuter_max_friends=10,
-        commuter_happiness_increase=0.5,
-        commuter_happiness_decrease=0.5,
         commuter_speed=1.0,
-        chance_new_friend=5.0,
         model_crs="epsg:3857",
         show_walkway=False,
         show_lakes_and_rivers=False,
@@ -88,15 +69,10 @@ class AgentsAndNetworks(mesa.Model):
         self.space = Campus(crs=model_crs)
         self.num_commuters = num_commuters
 
-        Commuter.MIN_FRIENDS = commuter_min_friends
-        Commuter.MAX_FRIENDS = commuter_max_friends
-        Commuter.HAPPINESS_INCREASE = commuter_happiness_increase
-        Commuter.HAPPINESS_DECREASE = commuter_happiness_decrease
         Commuter.SPEED = commuter_speed * 300.0  # meters per tick (5 minutes)
-        Commuter.CHANCE_NEW_FRIEND = chance_new_friend
 
-        self._load_buildings_from_file(buildings_file, crs=model_crs, campus=campus)
-        self._load_road_vertices_from_file(walkway_file, crs=model_crs, campus=campus)
+        self._load_buildings_from_file(buildings_file, crs=model_crs, region=region)
+        self._load_road_vertices_from_file(walkway_file, crs=model_crs, region=region)
         self._set_building_entrance()
         self.got_to_destination = 0
         self._create_commuters()
@@ -117,12 +93,6 @@ class AgentsAndNetworks(mesa.Model):
                 "status_work": partial(get_num_commuters_by_status, status="work"),
                 "status_traveling": partial(
                     get_num_commuters_by_status, status="transport"
-                ),
-                "friendship_home": partial(
-                    get_total_friendships_by_type, friendship_type="home"
-                ),
-                "friendship_work": partial(
-                    get_total_friendships_by_type, friendship_type="work"
                 ),
             }
         )
@@ -145,13 +115,10 @@ class AgentsAndNetworks(mesa.Model):
             self.schedule.add(commuter)
 
     def _load_buildings_from_file(
-        self, buildings_file: str, crs: str, campus: str
+        self, buildings_file: str, crs: str, region: str
     ) -> None:
 
         buildings_df = gpd.read_file(buildings_file)
-        if campus == "gmu":
-            buildings_df.fillna(0.0, inplace=True)
-            buildings_df.rename(columns={"NAME": "name"}, inplace=True)
         buildings_df.index.name = "unique_id"
         buildings_df = buildings_df.set_crs(self.data_crs, allow_override=True).to_crs(
             crs
@@ -164,14 +131,14 @@ class AgentsAndNetworks(mesa.Model):
         self.space.add_buildings(buildings)
 
     def _load_road_vertices_from_file(
-        self, walkway_file: str, crs: str, campus: str
+        self, walkway_file: str, crs: str, region: str
     ) -> None:
         walkway_df = (
             gpd.read_file(walkway_file)
             .set_crs(self.data_crs, allow_override=True)
             .to_crs(crs)
         )
-        self.walkway = CampusWalkway(campus=campus, lines=walkway_df["geometry"])
+        self.walkway = CampusWalkway(region=region, lines=walkway_df["geometry"])
         if self.show_walkway:
             walkway_creator = mg.AgentCreator(Walkway, model=self)
             walkway = walkway_creator.from_GeoDataFrame(walkway_df)
@@ -215,6 +182,7 @@ class AgentsAndNetworks(mesa.Model):
 
     def __update_clock(self) -> None:
         self.minute += self.step_duration
+        print(self.step_duration)
         if self.minute == 60:
             if self.hour == 23:
                 self.hour = 0

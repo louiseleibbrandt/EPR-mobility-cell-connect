@@ -56,10 +56,4 @@ status_chart = mesa.visualization.ChartModule(
     ],
     data_collector_name="datacollector",
 )
-friendship_chart = mesa.visualization.ChartModule(
-    [
-        {"Label": "friendship_home", "Color": "Green"},
-        {"Label": "friendship_work", "Color": "Blue"},
-    ],
-    data_collector_name="datacollector",
-)
+
