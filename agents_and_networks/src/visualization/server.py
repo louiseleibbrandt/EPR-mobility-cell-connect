@@ -2,7 +2,7 @@ import mesa
 
 from src.agent.building import Building
 from src.agent.commuter import Commuter
-from src.agent.geo_agents import Driveway, LakeAndRiver, Walkway
+from src.agent.geo_agents import Driveway, Walkway, Path
 
 
 class ClockElement(mesa.visualization.TextElement):
@@ -19,12 +19,20 @@ def agent_draw(agent):
     portrayal["color"] = "White"
     if isinstance(agent, Driveway):
         portrayal["color"] = "#D08004"
-    elif isinstance(agent, Walkway):
+    elif isinstance(agent, Path):
         portrayal["color"] = "Brown"
-    elif isinstance(agent, LakeAndRiver):
+    elif isinstance(agent, Walkway):
         portrayal["color"] = "#04D0CD"
     elif isinstance(agent, Building):
-        portrayal["color"] = "Grey"
+        if agent.visited:
+            if agent.function == 1:
+                portrayal["color"] = "Blue"
+            elif agent.function == 2:
+                portrayal["color"] = "Green"
+            else:
+                portrayal["color"] = "Red"
+        else:
+            portrayal["opacity"] = 0
         # if agent.function is None:
         #     portrayal["color"] = "Grey"
         # elif agent.function == 1.0:

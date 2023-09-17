@@ -38,17 +38,20 @@ class Campus(mg.GeoSpace):
     def get_building_by_id(self, unique_id: int) -> Building:
         return self._buildings[unique_id]
 
-    def add_buildings(self, agents) -> None:
+    def add_buildings(self, agents, types) -> None:
         super().add_agents(agents)
         homes, works, other_buildings = [], [], []
-        for agent in agents:
+        for (agent,type) in zip(agents,types):
             if isinstance(agent, Building):
                 self._buildings[agent.unique_id] = agent
-                if agent.function == 0.0:
+                if  type == 0:
+                    agent.function = 0
                     other_buildings.append(agent)
-                elif agent.function == 1.0:
+                elif type == 1:
+                    agent.function = 1
                     works.append(agent)
-                elif agent.function == 2.0:
+                elif type == 2:
+                    agent.function = 2
                     homes.append(agent)
         self.other_buildings = self.other_buildings + tuple(other_buildings)
         self.works = self.works + tuple(works)

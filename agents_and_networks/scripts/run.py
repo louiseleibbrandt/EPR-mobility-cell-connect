@@ -33,9 +33,11 @@ if __name__ == "__main__":
     model_params = {
         "region": args.region,
         "data_crs": region_params[args.region]["data_crs"],
-        "show_walkway": True,
-        "show_lakes_and_rivers": False,
-        "show_driveway": True,
+        "show_walkway": False,
+        "show_path": True,
+        "building_source_types": ["apartments","house","allotment_house"],
+        "building_destination_types": ["industrial","school","construction"],
+        "bounding_box": (4.3356,52.0010,4.3915,52.0214),
         "num_commuters": mesa.visualization.Slider(
             "Number of Commuters", value=50, min_value=10, max_value=150, step=10
         ),
@@ -50,11 +52,8 @@ if __name__ == "__main__":
             max_value=1.5,
             step=0.1,
         ),
-        "buildings_file": f"data/{args.region}/gis_osm_pois_a_free_1.zip",
-        "walkway_file": f"data/{args.region}/gis_osm_railways_free_1.zip",
-        "lakes_file": f"data/{args.region}/gis_osm_water_a_free_1.zip",
-        "rivers_file": f"data/{args.region}/gis_osm_waterways_a_free_1.zip",
-        "driveway_file": f"data/{args.region}/gis_osm_railways_free_1.zip",
+        "buildings_file": f"data/{args.region}/gis_osm_buildings_a_free_1.zip",
+        "walkway_file": f"data/{args.region}/gis_osm_roads_free_1.zip",
     }
 
     map_element = mg.visualization.MapModule(agent_draw, map_height=600, map_width=600)
@@ -65,4 +64,3 @@ if __name__ == "__main__":
         model_params,
     )
     server.launch()
-ß

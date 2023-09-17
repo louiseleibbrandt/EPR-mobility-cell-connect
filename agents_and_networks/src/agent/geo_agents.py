@@ -14,7 +14,7 @@ class Driveway(mg.GeoAgent):
         super().__init__(unique_id, model, geometry, crs)
 
 
-class LakeAndRiver(mg.GeoAgent):
+class Path(mg.GeoAgent):
     unique_id: int
     model: mesa.Model
     geometry: Point

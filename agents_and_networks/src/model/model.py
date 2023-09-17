@@ -9,9 +9,10 @@ from shapely.geometry import Point
 
 from src.agent.building import Building
 from src.agent.commuter import Commuter
-from src.agent.geo_agents import Driveway, LakeAndRiver, Walkway
+from src.agent.geo_agents import Path, Walkway
 from src.space.campus import Campus
 from src.space.road_network import CampusWalkway
+from shapely.geometry import LineString, Point
 
 
 def get_time(model) -> pd.Timedelta:
@@ -31,12 +32,14 @@ class AgentsAndNetworks(mesa.Model):
     running: bool
     schedule: mesa.time.RandomActivation
     show_walkway: bool
-    show_lakes_and_rivers: bool
     current_id: int
     space: Campus
     walkway: CampusWalkway
     world_size: gpd.geodataframe.GeoDataFrame
     got_to_destination: int  # count the total number of arrivals
+    building_source_types: list
+    building_destination_types: list
+    bounding_box:list
     num_commuters: int
     step_duration: int
     day: int
@@ -50,26 +53,28 @@ class AgentsAndNetworks(mesa.Model):
         data_crs: str,
         buildings_file: str,
         walkway_file: str,
-        lakes_file: str,
-        rivers_file: str,
-        driveway_file: str,
         num_commuters,
         step_duration,
+        building_source_types,
+        building_destination_types,
+        bounding_box,
         commuter_speed=1.0,
         model_crs="epsg:3857",
         show_walkway=False,
-        show_lakes_and_rivers=False,
-        show_driveway=False,
+        show_path=False,
     ) -> None:
         super().__init__()
         self.schedule = mesa.time.RandomActivation(self)
         self.show_walkway = show_walkway
-        self.show_lakes_and_rivers = show_lakes_and_rivers
+        self.show_path = show_path
         self.data_crs = data_crs
         self.space = Campus(crs=model_crs)
         self.num_commuters = num_commuters
-
-        Commuter.SPEED = commuter_speed * 300.0  # meters per tick (5 minutes)
+        self.building_source_types = building_source_types
+        self.building_destination_types = building_destination_types
+        self.bounding_box = bounding_box
+        self.step_duration = step_duration
+        Commuter.SPEED = commuter_speed * 60.0 * step_duration # meters per tick (5 minutes)
 
         self._load_buildings_from_file(buildings_file, crs=model_crs, region=region)
         self._load_road_vertices_from_file(walkway_file, crs=model_crs, region=region)
@@ -79,12 +84,7 @@ class AgentsAndNetworks(mesa.Model):
         self.day = 0
         self.hour = 5
         self.minute = 55
-        self.step_duration = step_duration
-        if show_driveway:
-            self._load_driveway_from_file(driveway_file, crs=model_crs)
-        if show_lakes_and_rivers:
-            self._load_lakes_and_rivers_from_file(lakes_file, crs=model_crs)
-            self._load_lakes_and_rivers_from_file(rivers_file, crs=model_crs)
+        
 
         self.datacollector = mesa.DataCollector(
             model_reporters={
@@ -110,6 +110,8 @@ class AgentsAndNetworks(mesa.Model):
             )
             commuter.set_home(random_home)
             commuter.set_work(random_work)
+            random_home.visited = True
+            random_work.visited = True 
             commuter.status = "home"
             self.space.add_commuter(commuter)
             self.schedule.add(commuter)
@@ -117,8 +119,11 @@ class AgentsAndNetworks(mesa.Model):
     def _load_buildings_from_file(
         self, buildings_file: str, crs: str, region: str
     ) -> None:
-
-        buildings_df = gpd.read_file(buildings_file)
+        # Apply bounding box, later might be better to implement polygon filter that user can select from map
+        buildings_df = gpd.read_file(buildings_file, bbox=(self.bounding_box))
+        # Filter for source (home) and destination (work) buildings
+        buildings_df = buildings_df[buildings_df['type'].isin(self.building_source_types+self.building_destination_types)] 
+        buildings_type = [2 if x in self.building_source_types else 1 for x in buildings_df['type']]
         buildings_df.index.name = "unique_id"
         buildings_df = buildings_df.set_crs(self.data_crs, allow_override=True).to_crs(
             crs
@@ -128,13 +133,13 @@ class AgentsAndNetworks(mesa.Model):
         ]
         building_creator = mg.AgentCreator(Building, model=self)
         buildings = building_creator.from_GeoDataFrame(buildings_df)
-        self.space.add_buildings(buildings)
+        self.space.add_buildings(buildings,buildings_type)
 
     def _load_road_vertices_from_file(
         self, walkway_file: str, crs: str, region: str
     ) -> None:
         walkway_df = (
-            gpd.read_file(walkway_file)
+            gpd.read_file(walkway_file, self.bounding_box)
             .set_crs(self.data_crs, allow_override=True)
             .to_crs(crs)
         )
@@ -144,28 +149,6 @@ class AgentsAndNetworks(mesa.Model):
             walkway = walkway_creator.from_GeoDataFrame(walkway_df)
             self.space.add_agents(walkway)
 
-    def _load_driveway_from_file(self, driveway_file: str, crs: str) -> None:
-        driveway_df = (
-            gpd.read_file(driveway_file)
-            .set_index("osm_id")
-            #.set_index("Id")
-            .set_crs(self.data_crs, allow_override=True)
-            .to_crs(crs)
-        )
-        driveway_creator = mg.AgentCreator(Driveway, model=self)
-        driveway = driveway_creator.from_GeoDataFrame(driveway_df)
-        self.space.add_agents(driveway)
-
-    def _load_lakes_and_rivers_from_file(self, lake_river_file: str, crs: str) -> None:
-        lake_river_df = (
-            gpd.read_file(lake_river_file)
-            .set_crs(self.data_crs, allow_override=True)
-            .to_crs(crs)
-        )
-        lake_river_df.index.names = ["Id"]
-        lake_river_creator = mg.AgentCreator(LakeAndRiver, model=self)
-        gmu_lake_river = lake_river_creator.from_GeoDataFrame(lake_river_df)
-        self.space.add_agents(gmu_lake_river)
 
     def _set_building_entrance(self) -> None:
         for building in (
@@ -179,10 +162,9 @@ class AgentsAndNetworks(mesa.Model):
         self.__update_clock()
         self.schedule.step()
         self.datacollector.collect(self)
-
+#
     def __update_clock(self) -> None:
         self.minute += self.step_duration
-        print(self.step_duration)
         if self.minute == 60:
             if self.hour == 23:
                 self.hour = 0
@@ -190,3 +172,8 @@ class AgentsAndNetworks(mesa.Model):
             else:
                 self.hour += 1
             self.minute = 0
+
+    #def update_path(self) -> None:
+        
+               
+                    

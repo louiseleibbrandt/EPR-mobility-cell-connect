@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import random
+import uuid
 
 import mesa
 import mesa_geo as mg
@@ -9,6 +10,7 @@ import pyproj
 from shapely.geometry import LineString, Point
 
 from src.agent.building import Building
+from src.agent.geo_agents import Path
 from src.space.utils import UnitTransformer, redistribute_vertices
 
 
@@ -96,6 +98,7 @@ class Commuter(mg.GeoAgent):
                 next_position = self.my_path[self.step_in_path]
                 self.model.space.move_commuter(self, next_position)
                 self.step_in_path += 1
+
             else:
                 self.model.space.move_commuter(self, self.destination.centroid)
                 if self.destination == self.my_work:
@@ -153,4 +156,5 @@ class Commuter(mg.GeoAgent):
                 redistributed_path_in_meters
             )
             self.my_path = list(redistributed_path_in_degree.coords)
+            print(self.my_path)
 

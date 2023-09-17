@@ -16,14 +16,17 @@ class Building(mg.GeoAgent):
     crs: pyproj.CRS
     centroid: mesa.space.FloatCoordinate
     name: str
+    visited: bool
     function: float  # 1.0 for work, 2.0 for home, 0.0 for neither
     entrance_pos: mesa.space.FloatCoordinate  # nearest vertex on road
+    
 
     def __init__(self, unique_id, model, geometry, crs) -> None:
         super().__init__(unique_id=unique_id, model=model, geometry=geometry, crs=crs)
         self.entrance = None
         self.name = str(uuid.uuid4())
-        self.function = randrange(3)
+        self.function = 0
+        self.visited = False
 
     def __repr__(self) -> str:
         return (
