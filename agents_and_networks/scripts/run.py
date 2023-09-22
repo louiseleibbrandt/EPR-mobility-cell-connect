@@ -34,16 +34,11 @@ if __name__ == "__main__":
         "region": args.region,
         "data_crs": region_params[args.region]["data_crs"],
         "show_walkway": False,
-        "show_path": True,
         "building_source_types": ["apartments","house","allotment_house"],
         "building_destination_types": ["industrial","school","construction"],
         "bounding_box": (4.3356,52.0010,4.3915,52.0214),
         "num_commuters": mesa.visualization.Slider(
-            "Number of Commuters", value=50, min_value=10, max_value=150, step=10
-        ),
-        "step_duration": mesa.visualization.NumberInput(
-            "Step Duration (m)",
-            value=5,
+            "Number of Commuters", value=5, min_value=5, max_value=150, step=10
         ),
         "commuter_speed": mesa.visualization.Slider(
             "Commuter Walking Speed (m/s)",
@@ -51,6 +46,34 @@ if __name__ == "__main__":
             min_value=0.1,
             max_value=1.5,
             step=0.1,
+        ),
+        "step_duration": mesa.visualization.NumberInput(
+            "Step Duration (m)",
+            value=10,
+        ),
+        "alpha": mesa.visualization.NumberInput(
+            "Exponent jump size distribution (truncated power law)",
+            value=0.55,
+        ),
+        "tau_jump": mesa.visualization.NumberInput(
+            "Max jump (km) jump size distribution (truncated power law)",
+            value=100.0,
+        ),
+        "beta": mesa.visualization.NumberInput(
+            "Exponent waiting time distribution (truncated power law)",
+            value=0.8,
+        ),
+        "tau_time": mesa.visualization.NumberInput(
+            "Max time (hour) waiting time distribution (truncated power law)",
+            value=17,
+        ),
+        "rho": mesa.visualization.NumberInput(
+            "Constant in probability of exploration",
+            value=0.6,
+        ),
+        "gamma": mesa.visualization.NumberInput(
+            "Exponent in probability of exploration",
+            value=0.21,
         ),
         "buildings_file": f"data/{args.region}/gis_osm_buildings_a_free_1.zip",
         "walkway_file": f"data/{args.region}/gis_osm_roads_free_1.zip",

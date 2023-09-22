@@ -6,6 +6,7 @@ import numpy as np
 import pyproj
 from shapely.geometry import LineString, MultiLineString
 from shapely.ops import transform
+import powerlaw as powerlaw
 
 
 def get_coord_matrix(
@@ -20,6 +21,10 @@ def get_coord_matrix(
         ]
     )
 
+def power_law_exponential_cutoff(
+        xmin: float, alpha_beta: float, k: float
+) -> float:
+    return powerlaw.Truncated_Power_Law(xmin = xmin, xmax=k, parameters=[1. + alpha_beta, 1.0 / k]).generate_random()[0]
 
 def get_affine_transform(
     from_coord: np.ndarray, to_coord: np.ndarray
@@ -59,6 +64,7 @@ def segmented(lines: gpd.GeoSeries) -> gpd.GeoSeries:
 # reference: https://gis.stackexchange.com/questions/367228/using-shapely-interpolate-to-evenly-re-sample-points-on-a-linestring-geodatafram
 def redistribute_vertices(geom, distance):
     if isinstance(geom, LineString):
+            
         if (num_vert := int(round(geom.length / distance))) == 0:
             num_vert = 1
         return LineString(
@@ -67,6 +73,7 @@ def redistribute_vertices(geom, distance):
                 for n in range(num_vert + 1)
             ]
         )
+    
     elif isinstance(geom, MultiLineString):
         parts = [redistribute_vertices(part, distance) for part in geom]
         return type(geom)([p for p in parts if not p.is_empty])

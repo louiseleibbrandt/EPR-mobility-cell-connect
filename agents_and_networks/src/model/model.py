@@ -9,10 +9,10 @@ from shapely.geometry import Point
 
 from src.agent.building import Building
 from src.agent.commuter import Commuter
-from src.agent.geo_agents import Path, Walkway
+from src.agent.geo_agents import Walkway
 from src.space.campus import Campus
 from src.space.road_network import CampusWalkway
-from shapely.geometry import LineString, Point
+from shapely.geometry import Point
 
 
 def get_time(model) -> pd.Timedelta:
@@ -24,6 +24,20 @@ def get_num_commuters_by_status(model, status: str) -> int:
         commuter for commuter in model.schedule.agents if commuter.status == status
     ]
     return len(commuters)
+
+def get_num_commuters_by_state(model, state: str) -> int:
+    commuters = [
+        commuter for commuter in model.schedule.agents if commuter.state == state
+    ]
+    return len(commuters)
+
+
+def get_pos_commuter(model) -> list:
+    commuters = [
+        (commuter,commuter.my_path[commuter.step_in_path]) for commuter in model.schedule.agents 
+    ]
+    return commuters
+
 
 
 
@@ -42,6 +56,12 @@ class AgentsAndNetworks(mesa.Model):
     bounding_box:list
     num_commuters: int
     step_duration: int
+    alpha: float
+    tau_jump: float    # in meters
+    beta: float
+    tau_time: float    # in hours
+    rho: float
+    gamma: float
     day: int
     hour: int
     minute: int
@@ -55,18 +75,22 @@ class AgentsAndNetworks(mesa.Model):
         walkway_file: str,
         num_commuters,
         step_duration,
+        alpha,
+        tau_jump,   # in meters
+        beta,
+        tau_time,   # in hours
+        rho,
+        gamma,
         building_source_types,
         building_destination_types,
         bounding_box,
         commuter_speed=1.0,
         model_crs="epsg:3857",
         show_walkway=False,
-        show_path=False,
     ) -> None:
         super().__init__()
         self.schedule = mesa.time.RandomActivation(self)
         self.show_walkway = show_walkway
-        self.show_path = show_path
         self.data_crs = data_crs
         self.space = Campus(crs=model_crs)
         self.num_commuters = num_commuters
@@ -75,15 +99,21 @@ class AgentsAndNetworks(mesa.Model):
         self.bounding_box = bounding_box
         self.step_duration = step_duration
         Commuter.SPEED = commuter_speed * 60.0 * step_duration # meters per tick (5 minutes)
-
+        Commuter.ALPHA = alpha
+        Commuter.TAU_jump = tau_jump * 100
+        Commuter.BETA = beta
+        Commuter.TAU_time = tau_time * 60.0
+        Commuter.RHO = rho
+        Commuter.GAMMA = gamma
         self._load_buildings_from_file(buildings_file, crs=model_crs, region=region)
         self._load_road_vertices_from_file(walkway_file, crs=model_crs, region=region)
         self._set_building_entrance()
         self.got_to_destination = 0
-        self._create_commuters()
         self.day = 0
-        self.hour = 5
-        self.minute = 55
+        self.hour = 0
+        self.minute = 0
+        self._create_commuters()
+        
         
 
         self.datacollector = mesa.DataCollector(
@@ -91,6 +121,8 @@ class AgentsAndNetworks(mesa.Model):
                 "time": get_time,
                 "status_home": partial(get_num_commuters_by_status, status="home"),
                 "status_work": partial(get_num_commuters_by_status, status="work"),
+                "state_explore": partial(get_num_commuters_by_state, state="explore"),
+                "state_return": partial(get_num_commuters_by_state, state="return"),
                 "status_traveling": partial(
                     get_num_commuters_by_status, status="transport"
                 ),
@@ -101,7 +133,6 @@ class AgentsAndNetworks(mesa.Model):
     def _create_commuters(self) -> None:
         for _ in range(self.num_commuters):
             random_home = self.space.get_random_home()
-            random_work = self.space.get_random_work()
             commuter = Commuter(
                 unique_id=uuid.uuid4().int,
                 model=self,
@@ -109,10 +140,14 @@ class AgentsAndNetworks(mesa.Model):
                 crs=self.space.crs,
             )
             commuter.set_home(random_home)
-            commuter.set_work(random_work)
+            #commuter.set_work(random_work)
+            #commuter.set_next_location(random_work)
             random_home.visited = True
-            random_work.visited = True 
+            #random_work.visited = True 
+            commuter.set_visited_location(random_home,1)
+            commuter.S = 1
             commuter.status = "home"
+            commuter.state = "explore"
             self.space.add_commuter(commuter)
             self.schedule.add(commuter)
 
@@ -162,6 +197,8 @@ class AgentsAndNetworks(mesa.Model):
         self.__update_clock()
         self.schedule.step()
         self.datacollector.collect(self)
+
+
 #
     def __update_clock(self) -> None:
         self.minute += self.step_duration
@@ -173,7 +210,7 @@ class AgentsAndNetworks(mesa.Model):
                 self.hour += 1
             self.minute = 0
 
-    #def update_path(self) -> None:
+
         
                
                     

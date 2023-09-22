@@ -4,6 +4,7 @@
 # external requirements
 mesa-geo~=0.5.0
 geopandas
+powerlaw
 numpy
 pandas
 matplotlib

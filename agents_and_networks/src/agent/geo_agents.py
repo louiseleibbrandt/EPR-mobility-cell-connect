@@ -1,7 +1,7 @@
 import mesa
 import mesa_geo as mg
 import pyproj
-from shapely.geometry import Point
+from shapely.geometry import Point, LineString
 
 
 class Driveway(mg.GeoAgent):
@@ -17,7 +17,7 @@ class Driveway(mg.GeoAgent):
 class Path(mg.GeoAgent):
     unique_id: int
     model: mesa.Model
-    geometry: Point
+    geometry: LineString
     crs: pyproj.CRS
 
     def __init__(self, unique_id, model, geometry, crs) -> None:

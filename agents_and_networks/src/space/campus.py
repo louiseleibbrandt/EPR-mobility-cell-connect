@@ -4,10 +4,11 @@ from typing import DefaultDict, Dict, Optional, Set, Tuple
 
 import mesa
 import mesa_geo as mg
-from shapely.geometry import Point
+from shapely.geometry import LineString,Point
 
 from src.agent.building import Building
 from src.agent.commuter import Commuter
+from src.agent.geo_agents import Path
 
 
 class Campus(mg.GeoSpace):

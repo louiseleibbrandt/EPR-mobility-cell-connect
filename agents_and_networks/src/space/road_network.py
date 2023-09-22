@@ -54,7 +54,8 @@ class RoadNetwork:
         to_node_pos = self.get_nearest_node(target)
         # return nx.shortest_path(self.nx_graph, from_node_pos,
         #                         to_node_pos, method="dijkstra", weight="length")
-        return nx.astar_path(self.nx_graph, from_node_pos, to_node_pos, weight="length")
+        path = nx.astar_path(self.nx_graph, from_node_pos, to_node_pos, weight="length")
+        return path
 
 
 class CampusWalkway(RoadNetwork):

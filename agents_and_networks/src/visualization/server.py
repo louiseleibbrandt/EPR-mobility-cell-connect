@@ -24,23 +24,15 @@ def agent_draw(agent):
     elif isinstance(agent, Walkway):
         portrayal["color"] = "#04D0CD"
     elif isinstance(agent, Building):
-        if agent.visited:
-            if agent.function == 1:
-                portrayal["color"] = "Blue"
-            elif agent.function == 2:
-                portrayal["color"] = "Green"
-            else:
-                portrayal["color"] = "Red"
-        else:
-            portrayal["opacity"] = 0
-        # if agent.function is None:
-        #     portrayal["color"] = "Grey"
-        # elif agent.function == 1.0:
-        #     portrayal["color"] = "Blue"
-        # elif agent.function == 2.0:
-        #     portrayal["color"] = "Green"
+        # if agent.visited:
+        #     if agent.function == 1:
+        #         portrayal["color"] = "Blue"
+        #     elif agent.function == 2:
+        #         portrayal["color"] = "Green"
+        #     else:
+        #         portrayal["color"] = "Red"
         # else:
-        #     portrayal["color"] = "Grey"
+        portrayal["opacity"] = 0
     elif isinstance(agent, Commuter):
         if agent.status == "home":
             portrayal["color"] = "Green"
@@ -61,7 +53,10 @@ status_chart = mesa.visualization.ChartModule(
         {"Label": "status_home", "Color": "Green"},
         {"Label": "status_work", "Color": "Blue"},
         {"Label": "status_traveling", "Color": "Red"},
+        {"Label": "state_explore", "Color": "Pink"},
+        {"Label": "state_return", "Color": "Purple"},
     ],
     data_collector_name="datacollector",
+
 )
 
