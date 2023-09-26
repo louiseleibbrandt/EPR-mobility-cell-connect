@@ -31,6 +31,18 @@ def get_num_commuters_by_state(model, state: str) -> int:
     ]
     return len(commuters)
 
+def get_average_visited_locations(model) -> int:
+    commuters = [
+        commuter.S for commuter in model.schedule.agents 
+    ]
+    return sum(commuters)/len(commuters)
+
+def get_visited_locations(model) -> list:
+    commuters = [
+        commuter.S for commuter in model.schedule.agents 
+    ]
+    return commuters
+
 
 def get_pos_commuter(model) -> list:
     commuters = [
@@ -125,6 +137,12 @@ class AgentsAndNetworks(mesa.Model):
                 "state_return": partial(get_num_commuters_by_state, state="return"),
                 "status_traveling": partial(
                     get_num_commuters_by_status, status="transport"
+                ),
+                "average_visited_locations": partial(
+                    get_average_visited_locations
+                ),
+                "visited_locations": partial(
+                    get_visited_locations
                 ),
             }
         )

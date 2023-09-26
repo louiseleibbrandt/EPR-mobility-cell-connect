@@ -7,6 +7,7 @@ from src.visualization.server import (
     agent_draw,
     clock_element,
     status_chart,
+    location_chart,
 )
 
 
@@ -49,7 +50,7 @@ if __name__ == "__main__":
         ),
         "step_duration": mesa.visualization.NumberInput(
             "Step Duration (m)",
-            value=10,
+            value=5,
         ),
         "alpha": mesa.visualization.NumberInput(
             "Exponent jump size distribution (truncated power law)",
@@ -82,7 +83,7 @@ if __name__ == "__main__":
     map_element = mg.visualization.MapModule(agent_draw, map_height=600, map_width=600)
     server = mesa.visualization.ModularServer(
         AgentsAndNetworks,
-        [map_element, clock_element, status_chart],
+        [map_element, clock_element, status_chart, location_chart],
         "Agents and Networks",
         model_params,
     )

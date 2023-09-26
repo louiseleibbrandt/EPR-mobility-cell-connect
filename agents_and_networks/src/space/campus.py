@@ -9,6 +9,7 @@ from shapely.geometry import LineString,Point
 from src.agent.building import Building
 from src.agent.commuter import Commuter
 from src.agent.geo_agents import Path
+from operator import itemgetter
 
 
 class Campus(mg.GeoSpace):
@@ -38,6 +39,15 @@ class Campus(mg.GeoSpace):
 
     def get_building_by_id(self, unique_id: int) -> Building:
         return self._buildings[unique_id]
+    
+    def get_nearest_building (
+        self, float_pos: mesa.space.FloatCoordinate
+    ) -> Building:
+        #min_building = min((building.geometry.distance(float_pos) for building in self.works))
+        min_building = min(self.works,key=lambda x:x.geometry.distance(float_pos))
+        return min_building
+
+
 
     def add_buildings(self, agents, types) -> None:
         super().add_agents(agents)

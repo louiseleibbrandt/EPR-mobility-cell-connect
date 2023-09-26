@@ -50,11 +50,16 @@ def agent_draw(agent):
 clock_element = ClockElement()
 status_chart = mesa.visualization.ChartModule(
     [
-        {"Label": "status_home", "Color": "Green"},
-        {"Label": "status_work", "Color": "Blue"},
         {"Label": "status_traveling", "Color": "Red"},
         {"Label": "state_explore", "Color": "Pink"},
         {"Label": "state_return", "Color": "Purple"},
+    ],
+    data_collector_name="datacollector",
+)
+
+location_chart = mesa.visualization.ChartModule(
+    [
+        {"Label": "average_visited_locations", "Color": "Red"},
     ],
     data_collector_name="datacollector",
 

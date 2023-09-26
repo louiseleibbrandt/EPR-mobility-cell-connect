@@ -68,7 +68,8 @@ class Commuter(mg.GeoAgent):
         # Total time passed in minutes
         time_passed_m = (self.model.hour * 60) + self.model.minute
         # Get waiting time 
-        wait_time_m = (power_law_exponential_cutoff(1, self.BETA, self.TAU_time+1)-1) * 60
+        wait_time_m = (power_law_exponential_cutoff(1, self.BETA, self.TAU_time+1)-1) #*60
+
         
         # Set correct new time
         total_time_m = wait_time_m + time_passed_m
@@ -78,7 +79,6 @@ class Commuter(mg.GeoAgent):
         # Hour resets ever 24 hours
         if (self.wait_time_h >= 24):
             self.wait_time_h = math.floor(self.wait_time_h / 24)
-
         print("hour: ")
         print(self.wait_time_h)
         print("minute: ")
@@ -116,7 +116,6 @@ class Commuter(mg.GeoAgent):
         ):
             self.origin = self.model.space.get_building_by_id(self.my_home.unique_id)
             self.model.space.move_commuter(self, pos=self.origin.centroid)
-            print(self.S)
             p = self.RHO*(math.pow(self.S,(-1*self.GAMMA)))
             if random.uniform(0, 1) < p:
                 self.state="explore"
@@ -158,6 +157,7 @@ class Commuter(mg.GeoAgent):
                 elif self.destination == self.my_home:
                     self.status = "home"
                 self.model.got_to_destination += 1
+                print("reset")
                 self._set_wait_time()
 
 
@@ -175,19 +175,29 @@ class Commuter(mg.GeoAgent):
         self.set_work(new_work)
 
     def _explore(self) -> None:
+        # Calculate new point based on jump size distribution and uniform for direction
+        jump_length = (power_law_exponential_cutoff(1, self.ALPHA, self.TAU_jump+1))*100
+
+        theta = random.uniform(0, 2*math.pi)
+        new_point = Point(self.geometry.x + jump_length * math.cos(theta),
+            self.geometry.y + jump_length * math.sin(theta))
         
-        while (next_location := self.model.space.get_random_work()).visited == True:
-            continue
-        next_location.visited = True
-        self.set_next_location(next_location)
+        # Set new location as building closest to this point
+        new_location = self.model.space.get_nearest_building(new_point)
+        new_location.visited = True
+        self.set_next_location(new_location)
+
+        # Update parameters 
         self.S = self.S + 1
-        self.visited_locations.append(next_location)
+        self.visited_locations.append(new_location)
         self.frequencies.append(1)
         
 
     def _return(self) -> None:
-        self.set_next_location(self.my_home)
-        self.frequencies[0] = self.frequencies[0] + 1
+        new_location= random.sample(population=self.visited_locations,k=1,counts=self.frequencies)
+        index = self.visited_locations.index(new_location[0])
+        self.frequencies[index] += 1
+        self.set_next_location(new_location[0])
 
 
     def _path_select(self) -> None:
