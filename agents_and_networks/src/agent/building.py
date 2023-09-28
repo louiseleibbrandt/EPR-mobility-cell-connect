@@ -38,3 +38,5 @@ class Building(mg.GeoAgent):
         if isinstance(other, Building):
             return self.unique_id == other.unique_id
         return False
+    
+

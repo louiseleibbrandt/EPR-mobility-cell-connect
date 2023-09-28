@@ -51,8 +51,8 @@ clock_element = ClockElement()
 status_chart = mesa.visualization.ChartModule(
     [
         {"Label": "status_traveling", "Color": "Red"},
-        {"Label": "state_explore", "Color": "Pink"},
-        {"Label": "state_return", "Color": "Purple"},
+        {"Label": "state_explore", "Color": "Blue"},
+        {"Label": "state_return", "Color": "Green"},
     ],
     data_collector_name="datacollector",
 )

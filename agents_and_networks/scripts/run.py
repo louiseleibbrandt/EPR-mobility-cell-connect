@@ -23,7 +23,7 @@ if __name__ == "__main__":
     if args.region == "zuid-holland":
         data_file_prefix = "zuid-holland"
     else:
-        raise ValueError("Invalid campus name. Choose from ub or gmu.")
+        raise ValueError("Invalid region name. Choose zuid-holland.")
     
     region_params = {
         "zuid-holland": {"data_crs": "epsg:4326", "commuter_speed": 0.5},

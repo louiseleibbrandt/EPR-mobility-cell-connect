@@ -68,9 +68,8 @@ class Commuter(mg.GeoAgent):
         # Total time passed in minutes
         time_passed_m = (self.model.hour * 60) + self.model.minute
         # Get waiting time 
-        wait_time_m = (power_law_exponential_cutoff(1, self.BETA, self.TAU_time+1)-1) #*60
+        wait_time_m = (power_law_exponential_cutoff(1, self.BETA, self.TAU_time/60+1)-1) #*60
 
-        
         # Set correct new time
         total_time_m = wait_time_m + time_passed_m
         self.wait_time_h = math.floor(total_time_m/60)
@@ -79,10 +78,7 @@ class Commuter(mg.GeoAgent):
         # Hour resets ever 24 hours
         if (self.wait_time_h >= 24):
             self.wait_time_h = math.floor(self.wait_time_h / 24)
-        print("hour: ")
-        print(self.wait_time_h)
-        print("minute: ")
-        print(self.wait_time_m)
+        
 
     def set_home(self, new_home: Building) -> None:
         old_home_pos = self.my_home.centroid if self.my_home else None
@@ -102,21 +98,29 @@ class Commuter(mg.GeoAgent):
         self.frequencies.append(frequency)
 
     def step(self) -> None:
-        
         self._prepare_to_move()
         self._move()
+        
 
 
     def _prepare_to_move(self) -> None:
         # start going to work
         if (
             (self.status == "home" or self.status == "work")
-            and self.model.hour == self.wait_time_h
-            and self.model.minute >= self.wait_time_m
+        ):
+            print(self.wait_time_h)
+            print(self.wait_time_m)
+        if (
+            (self.status == "home" or self.status == "work")
+            and (self.model.hour > self.wait_time_h 
+            or (self.model.hour == self.wait_time_h and self.model.minute >= self.wait_time_m))
         ):
             self.origin = self.model.space.get_building_by_id(self.my_home.unique_id)
             self.model.space.move_commuter(self, pos=self.origin.centroid)
             p = self.RHO*(math.pow(self.S,(-1*self.GAMMA)))
+            print("explore prob: ", p)
+            print("locations: ", self.S)
+
             if random.uniform(0, 1) < p:
                 self.state="explore"
                 self._explore()
@@ -130,19 +134,6 @@ class Commuter(mg.GeoAgent):
             self._path_select()
             self.status = "transport"
             
-        # start going home
-        # elif (
-        #     self.status == "work"
-        #     and self.model.hour == self.end_time_h
-        #     and self.model.minute == self.end_time_m
-        # ):
-        #     self.origin = self.model.space.get_building_by_id(self.my_work.unique_id)
-        #     self.model.space.move_commuter(self, pos=self.origin.centroid)
-        #     self.destination = self.model.space.get_building_by_id(
-        #         self.my_home.unique_id
-        #     )
-        #     self._path_select()
-        #     self.status = "transport"
 
     def _move(self) -> None:
         if self.status == "transport":
@@ -152,13 +143,12 @@ class Commuter(mg.GeoAgent):
                 self.step_in_path += 1
             else:
                 self.model.space.move_commuter(self, self.destination.centroid)
+                self._set_wait_time()
                 if self.destination == self.next_location:
                     self.status = "work"
                 elif self.destination == self.my_home:
                     self.status = "home"
-                self.model.got_to_destination += 1
-                print("reset")
-                self._set_wait_time()
+                
 
 
     def advance(self) -> None:

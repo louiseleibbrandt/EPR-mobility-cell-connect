@@ -6,6 +6,7 @@ import mesa
 import mesa_geo as mg
 import pandas as pd
 from shapely.geometry import Point
+import csv
 
 from src.agent.building import Building
 from src.agent.commuter import Commuter
@@ -31,24 +32,13 @@ def get_num_commuters_by_state(model, state: str) -> int:
     ]
     return len(commuters)
 
-def get_average_visited_locations(model) -> int:
+def get_average_visited_locations(model) -> list:
     commuters = [
         commuter.S for commuter in model.schedule.agents 
     ]
     return sum(commuters)/len(commuters)
 
-def get_visited_locations(model) -> list:
-    commuters = [
-        commuter.S for commuter in model.schedule.agents 
-    ]
-    return commuters
 
-
-def get_pos_commuter(model) -> list:
-    commuters = [
-        (commuter,commuter.my_path[commuter.step_in_path]) for commuter in model.schedule.agents 
-    ]
-    return commuters
 
 
 
@@ -57,12 +47,12 @@ def get_pos_commuter(model) -> list:
 class AgentsAndNetworks(mesa.Model):
     running: bool
     schedule: mesa.time.RandomActivation
+    output_file: csv
+    output_writer: csv.writer
     show_walkway: bool
     current_id: int
     space: Campus
     walkway: CampusWalkway
-    world_size: gpd.geodataframe.GeoDataFrame
-    got_to_destination: int  # count the total number of arrivals
     building_source_types: list
     building_destination_types: list
     bounding_box:list
@@ -101,6 +91,8 @@ class AgentsAndNetworks(mesa.Model):
         show_walkway=False,
     ) -> None:
         super().__init__()
+        self.output_file = open('././outputs/trajectories/output.csv', 'w')
+        self.output_writer = csv.writer(self.output_file)
         self.schedule = mesa.time.RandomActivation(self)
         self.show_walkway = show_walkway
         self.data_crs = data_crs
@@ -120,11 +112,11 @@ class AgentsAndNetworks(mesa.Model):
         self._load_buildings_from_file(buildings_file, crs=model_crs, region=region)
         self._load_road_vertices_from_file(walkway_file, crs=model_crs, region=region)
         self._set_building_entrance()
-        self.got_to_destination = 0
         self.day = 0
         self.hour = 0
         self.minute = 0
         self._create_commuters()
+       # self.output_writer.writeheader()
         
         
 
@@ -141,9 +133,6 @@ class AgentsAndNetworks(mesa.Model):
                 "average_visited_locations": partial(
                     get_average_visited_locations
                 ),
-                "visited_locations": partial(
-                    get_visited_locations
-                ),
             }
         )
         self.datacollector.collect(self)
@@ -158,10 +147,7 @@ class AgentsAndNetworks(mesa.Model):
                 crs=self.space.crs,
             )
             commuter.set_home(random_home)
-            #commuter.set_work(random_work)
-            #commuter.set_next_location(random_work)
             random_home.visited = True
-            #random_work.visited = True 
             commuter.set_visited_location(random_home,1)
             commuter.S = 1
             commuter.status = "home"
@@ -214,10 +200,16 @@ class AgentsAndNetworks(mesa.Model):
     def step(self) -> None:
         self.__update_clock()
         self.schedule.step()
+
+        # write to file per timestep
+        output_file = open('././outputs/trajectories/output.csv', 'a')
+        output_writer = csv.writer(output_file)
+        output_writer.writerow([(commuter.geometry.x,commuter.geometry.y) for commuter in self.schedule.agents ])
+        output_file.close()
+
+        # collect agent information
         self.datacollector.collect(self)
 
-
-#
     def __update_clock(self) -> None:
         self.minute += self.step_duration
         if self.minute == 60:
