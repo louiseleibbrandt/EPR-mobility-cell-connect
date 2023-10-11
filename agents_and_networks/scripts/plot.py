@@ -1,20 +1,52 @@
 import matplotlib.pyplot as plt
 import pandas as pd
 import geopandas as gpd
-from shapely.geometry import Point
+import numpy as np
+from shapely.geometry import Point, LineString
+from pyproj import Transformer
 
-df = pd.read_csv('./outputs/trajectories/output1.csv')
+df = pd.read_csv('./outputs/trajectories/output.csv')
+df['timestamp'] = pd.to_datetime(df['timestamp'])
+
+# filter dataframe by date
+start_date = '2023-05-03'
+end_date = '2023-05-04'
+mask = (df['timestamp'] >= start_date) & (df['timestamp'] <= end_date)
+df = df.loc[mask]
+#bounding_box = (4.3120,51.9807,4.3731,52.0239)
+bounding_box = (4.3101,51.9004,4.5312,52.0354)
+walkway_file = "./data/zuid-holland/gis_osm_roads_free_1.zip"
+
+#"epsg:3857"
+
+
+colors = ['red','salmon','blue','royalblue', 'green','lightgreen','orange','bisque','purple','plum',
+          'red','salmon','blue','royalblue', 'green','lightgreen','orange','bisque','purple','plum',
+          'red','salmon','blue','royalblue', 'green','lightgreen','orange','bisque','purple','plum',
+          'red','salmon','blue','royalblue', 'green','lightgreen','orange','bisque','purple','plum']
+
+agents = sorted(pd.unique(df['owner']))
+
 fig, ax = plt.subplots()
-gdf = []
-for i in range(5):
-    df['geometry'+str(i)] = df.apply(lambda row: Point(row[i].strip("()").split(",")[0], row[i].strip("()").split(",")[1]), axis=1)
-    gdf.append(gpd.GeoDataFrame(df, geometry='geometry'+str(i)))
+walkway_df = (
+            gpd.read_file(walkway_file, bounding_box)
+        )
+walkway_df.plot(ax=ax,color='gray')
 
+for i in range(len(agents)):
+    agents_df = df[df['owner'].isin([agents[i]])] 
+    phone1_df = agents_df[agents_df['device'].isin([chr(i+65)+"_1"])] 
+    phone2_df = agents_df[agents_df['device'].isin([chr(i+65)+"_2"])] 
+    
+    lon1 = phone1_df['cellinfo.wgs84.lon']
+    lat1 = phone1_df['cellinfo.wgs84.lat']
+    lon2 = phone2_df['cellinfo.wgs84.lon']
+    lat2 = phone2_df['cellinfo.wgs84.lat']
+    print(colors[2*i-1])
+    plt.plot(lon1, lat1,color=colors[2*i+1],zorder=5)
+    plt.scatter(lon1, lat1,color=colors[2*i+1],zorder=10)
+    print(colors[2*i])
+    plt.plot(lon2, lat2,color=colors[2*i],zorder=5)
+    plt.scatter(lon2, lat2,color=colors[2*i],zorder=10)
 
-
-gdf[0].plot(ax=ax, color='blue')
-gdf[1].plot(ax=ax, color='green')
-gdf[2].plot(ax=ax, color='red')
-gdf[3].plot(ax=ax, color='orange')
-gdf[4].plot(ax=ax, color='purple')
 plt.show()

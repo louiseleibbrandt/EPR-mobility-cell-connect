@@ -11,12 +11,13 @@ from src.agent.commuter import Commuter
 from src.agent.geo_agents import Path
 from operator import itemgetter
 
-
 class Campus(mg.GeoSpace):
     homes: Tuple[Building]
     works: Tuple[Building]
     other_buildings: Tuple[Building]
     home_counter: DefaultDict[mesa.space.FloatCoordinate, int]
+    commuters: list[Commuter]
+    number_commuters: int
     _buildings: Dict[int, Building]
     _commuters_pos_map: DefaultDict[mesa.space.FloatCoordinate, Set[Commuter]]
     _commuter_id_map: Dict[int, Commuter]
@@ -30,6 +31,7 @@ class Campus(mg.GeoSpace):
         self._buildings = {}
         self._commuters_pos_map = defaultdict(set)
         self._commuter_id_map = {}
+        self.commuters = []
 
     def get_random_home(self) -> Building:
         return random.choice(self.homes)
@@ -76,8 +78,9 @@ class Campus(mg.GeoSpace):
     def get_commuter_by_id(self, commuter_id: int) -> Commuter:
         return self._commuter_id_map[commuter_id]
 
-    def add_commuter(self, agent: Commuter) -> None:
-        super().add_agents([agent])
+    def add_commuter(self, agent: Commuter, update_idx: bool) -> None:
+        if (update_idx):
+            super().add_agents([agent])
         self._commuters_pos_map[(agent.geometry.x, agent.geometry.y)].add(agent)
         self._commuter_id_map[agent.unique_id] = agent
 
@@ -91,14 +94,16 @@ class Campus(mg.GeoSpace):
         self.home_counter[new_home_pos] += 1
 
     def move_commuter(
-        self, commuter: Commuter, pos: mesa.space.FloatCoordinate
+        self, commuter: Commuter, pos: mesa.space.FloatCoordinate, update_idx: bool
     ) -> None:
-        self.__remove_commuter(commuter)
+        self.__remove_commuter(commuter,update_idx)
         commuter.geometry = Point(pos)
-        self.add_commuter(commuter)
+        self.add_commuter(commuter,update_idx)
+        
 
-    def __remove_commuter(self, commuter: Commuter) -> None:
-        super().remove_agent(commuter)
+    def __remove_commuter(self, commuter: Commuter,update_idx: bool) -> None:
+        if (update_idx):
+            super().remove_agent(commuter)
         del self._commuter_id_map[commuter.unique_id]
         self._commuters_pos_map[(commuter.geometry.x, commuter.geometry.y)].remove(
             commuter

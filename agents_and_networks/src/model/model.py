@@ -1,12 +1,15 @@
+import profile
 import uuid
 from functools import partial
-
 import geopandas as gpd
+import numpy as np
 import mesa
 import mesa_geo as mg
 import pandas as pd
 from shapely.geometry import Point
 import csv
+import math
+from datetime import datetime
 
 from src.agent.building import Building
 from src.agent.commuter import Commuter
@@ -14,6 +17,9 @@ from src.agent.geo_agents import Walkway
 from src.space.campus import Campus
 from src.space.road_network import CampusWalkway
 from shapely.geometry import Point
+from src.space.utils import power_law_exponential_cutoff
+
+from pyproj import Transformer
 
 
 def get_time(model) -> pd.Timedelta:
@@ -48,7 +54,6 @@ class AgentsAndNetworks(mesa.Model):
     running: bool
     schedule: mesa.time.RandomActivation
     output_file: csv
-    output_writer: csv.writer
     show_walkway: bool
     current_id: int
     space: Campus
@@ -67,6 +72,10 @@ class AgentsAndNetworks(mesa.Model):
     day: int
     hour: int
     minute: int
+    second: int
+    p_time1: list[int]
+    p_time2: list[int]
+    writing_id: int
     datacollector: mesa.DataCollector
 
     def __init__(
@@ -91,34 +100,41 @@ class AgentsAndNetworks(mesa.Model):
         show_walkway=False,
     ) -> None:
         super().__init__()
-        self.output_file = open('././outputs/trajectories/output.csv', 'w')
-        self.output_writer = csv.writer(self.output_file)
         self.schedule = mesa.time.RandomActivation(self)
         self.show_walkway = show_walkway
         self.data_crs = data_crs
         self.space = Campus(crs=model_crs)
         self.num_commuters = num_commuters
+        self.space.number_commuters = num_commuters
         self.building_source_types = building_source_types
         self.building_destination_types = building_destination_types
         self.bounding_box = bounding_box
         self.step_duration = step_duration
-        Commuter.SPEED = commuter_speed * 60.0 * step_duration # meters per tick (5 minutes)
+
+        Commuter.SPEED = commuter_speed * step_duration  # meters per tick (5 seconds)
         Commuter.ALPHA = alpha
-        Commuter.TAU_jump = tau_jump * 100
+        Commuter.TAU_jump = tau_jump
         Commuter.BETA = beta
-        Commuter.TAU_time = tau_time * 60.0
+        Commuter.TAU_time = tau_time
         Commuter.RHO = rho
         Commuter.GAMMA = gamma
+
         self._load_buildings_from_file(buildings_file, crs=model_crs, region=region)
         self._load_road_vertices_from_file(walkway_file, crs=model_crs, region=region)
         self._set_building_entrance()
         self.day = 0
         self.hour = 0
         self.minute = 0
-        self._create_commuters()
-       # self.output_writer.writeheader()
-        
-        
+        self.second = 0
+        self.writing_id = 0
+        self._create_commuters() 
+        self.p_time1 = np.random.exponential(3.45,self.num_commuters)*180
+        self.p_time2 = np.random.exponential(3.45,self.num_commuters)*180
+
+        # reset output file
+        output_file = open('././outputs/trajectories/output.csv', 'w')
+        csv.writer(output_file).writerow(['id','owner','device','timestamp','cellinfo.wgs84.lon','cellinfo.wgs84.lat','cellinfo.azimuth_degrees','cell'])    
+              
 
         self.datacollector = mesa.DataCollector(
             model_reporters={
@@ -147,12 +163,13 @@ class AgentsAndNetworks(mesa.Model):
                 crs=self.space.crs,
             )
             commuter.set_home(random_home)
+            commuter.set_next_location(commuter.my_home)
             random_home.visited = True
             commuter.set_visited_location(random_home,1)
             commuter.S = 1
             commuter.status = "home"
             commuter.state = "explore"
-            self.space.add_commuter(commuter)
+            self.space.add_commuter(commuter, True)
             self.schedule.add(commuter)
 
     def _load_buildings_from_file(
@@ -197,30 +214,60 @@ class AgentsAndNetworks(mesa.Model):
         ):
             building.entrance_pos = self.walkway.get_nearest_node(building.centroid)
 
+
     def step(self) -> None:
+        
         self.__update_clock()
         self.schedule.step()
+        
 
-        # write to file per timestep
+        time_passed_seconds = self.hour*60*60 + self.minute*60 + self.second
+        
+
+        for i in range(self.num_commuters):
+            # should reset ever 24 hours (24*60)
+            if (time_passed_seconds <= self.step_duration):
+                self.p_time1[i] = np.random.exponential(3.45,1)*180
+                self.p_time2[i] = np.random.exponential(3.45,1)*180
+
+            if (time_passed_seconds >= self.p_time1[i]):
+                self.p_time1[i] = time_passed_seconds+ np.random.exponential(3.45,1)*180
+                self.__write_to_file(i, 1)
+            if (time_passed_seconds >= self.p_time2[i]):
+                self.p_time2[i] = time_passed_seconds + np.random.exponential(3.45,1)*180
+                self.__write_to_file(i, 2)
+        self.datacollector.collect(self)
+    
+
+    def __write_to_file(self, agent: int, phone: int) -> None:
         output_file = open('././outputs/trajectories/output.csv', 'a')
         output_writer = csv.writer(output_file)
-        output_writer.writerow([(commuter.geometry.x,commuter.geometry.y) for commuter in self.schedule.agents ])
-        output_file.close()
 
-        # collect agent information
-        self.datacollector.collect(self)
+        commuter = self.schedule.agents[agent]
+        x,y = Transformer.from_crs("EPSG:3857","EPSG:4326").transform(commuter.geometry.x,commuter.geometry.y)
+        
+        output_writer.writerow([self.writing_id, f"Agent{chr(agent + 65)}", f"{chr(agent + 65)}_{phone}", 
+                                   datetime(2023, 5, self.day+1, self.hour, self.minute, self.second, 0),
+                                   y,x,180,"0-0-0"])
+        output_file.close()
+        self.writing_id += 1
+
 
     def __update_clock(self) -> None:
-        self.minute += self.step_duration
-        if self.minute == 60:
-            if self.hour == 23:
-                self.hour = 0
-                self.day += 1
-            else:
-                self.hour += 1
-            self.minute = 0
-
-
+        self.second += self.step_duration
+        if self.second >= 60:
+            while self.second/60 >= 1:
+                self.minute += 1
+                self.second -= 60
+            if self.minute >= 60:
+                while self.minute/60 >= 1:
+                    self.hour += 1
+                    self.minute -= 60
+                if self.hour >= 23:
+                    self.day += 1
+                    self.hour = 0
+        
+                
         
                
                     

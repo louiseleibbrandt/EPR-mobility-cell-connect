@@ -11,7 +11,7 @@ class ClockElement(mesa.visualization.TextElement):
         pass
 
     def render(self, model):
-        return f"Day {model.day}, {model.hour:02d}:{model.minute:02d}"
+        return f"Day {model.day}, {model.hour:02d}:{model.minute:02d}:{model.second:02d}"
 
 
 def agent_draw(agent):

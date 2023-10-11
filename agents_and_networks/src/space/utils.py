@@ -24,7 +24,7 @@ def get_coord_matrix(
 def power_law_exponential_cutoff(
         xmin: float, alpha_beta: float, k: float
 ) -> float:
-    return powerlaw.Truncated_Power_Law(xmin = xmin, xmax=k, parameters=[1. + alpha_beta, 1.0 / k]).generate_random()[0]
+    return powerlaw.Truncated_Power_Law(xmin = xmin, parameters=[1. + alpha_beta, 1.0 / k]).generate_random()[0]
 
 def get_affine_transform(
     from_coord: np.ndarray, to_coord: np.ndarray

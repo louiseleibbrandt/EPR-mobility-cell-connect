@@ -10,7 +10,6 @@ import numpy as np
 import pyproj
 import geopandas as gpd
 from shapely.geometry import LineString, Point
-
 from src.agent.building import Building
 from src.agent.geo_agents import Path
 from src.space.utils import UnitTransformer, redistribute_vertices, power_law_exponential_cutoff
@@ -68,8 +67,8 @@ class Commuter(mg.GeoAgent):
         # Total time passed in minutes
         time_passed_m = (self.model.hour * 60) + self.model.minute
         # Get waiting time 
-        wait_time_m = (power_law_exponential_cutoff(1, self.BETA, self.TAU_time/60+1)-1) #*60
-
+        wait_time_m = (power_law_exponential_cutoff(1, self.BETA, self.TAU_time))*60
+        print("WAIT TIME: ", wait_time_m)
         # Set correct new time
         total_time_m = wait_time_m + time_passed_m
         self.wait_time_h = math.floor(total_time_m/60)
@@ -78,6 +77,7 @@ class Commuter(mg.GeoAgent):
         # Hour resets ever 24 hours
         if (self.wait_time_h >= 24):
             self.wait_time_h = math.floor(self.wait_time_h / 24)
+            
         
 
     def set_home(self, new_home: Building) -> None:
@@ -100,26 +100,17 @@ class Commuter(mg.GeoAgent):
     def step(self) -> None:
         self._prepare_to_move()
         self._move()
-        
+
 
 
     def _prepare_to_move(self) -> None:
-        # start going to work
         if (
             (self.status == "home" or self.status == "work")
+            and (self.model.hour == self.wait_time_h and self.model.minute >= self.wait_time_m)
         ):
-            print(self.wait_time_h)
-            print(self.wait_time_m)
-        if (
-            (self.status == "home" or self.status == "work")
-            and (self.model.hour > self.wait_time_h 
-            or (self.model.hour == self.wait_time_h and self.model.minute >= self.wait_time_m))
-        ):
-            self.origin = self.model.space.get_building_by_id(self.my_home.unique_id)
-            self.model.space.move_commuter(self, pos=self.origin.centroid)
+            self.origin = self.next_location
+            self.model.space.move_commuter(self, pos=self.geometry, update_idx = True)
             p = self.RHO*(math.pow(self.S,(-1*self.GAMMA)))
-            print("explore prob: ", p)
-            print("locations: ", self.S)
 
             if random.uniform(0, 1) < p:
                 self.state="explore"
@@ -139,11 +130,12 @@ class Commuter(mg.GeoAgent):
         if self.status == "transport":
             if self.step_in_path < len(self.my_path):
                 next_position = self.my_path[self.step_in_path]
-                self.model.space.move_commuter(self, next_position)
+                self.model.space.move_commuter(self, next_position, False)
                 self.step_in_path += 1
             else:
-                self.model.space.move_commuter(self, self.destination.centroid)
+                self.model.space.move_commuter(self, self.destination.centroid,True)
                 self._set_wait_time()
+
                 if self.destination == self.next_location:
                     self.status = "work"
                 elif self.destination == self.my_home:
@@ -151,27 +143,14 @@ class Commuter(mg.GeoAgent):
                 
 
 
-    def advance(self) -> None:
-        raise NotImplementedError
-
-    def _relocate_home(self) -> None:
-        while (new_home := self.model.space.get_random_home()) == self.my_home:
-            continue
-        self.set_home(new_home)
-
-    def _relocate_work(self) -> None:
-        while (new_work := self.model.space.get_random_work()) == self.my_work:
-            continue
-        self.set_work(new_work)
-
     def _explore(self) -> None:
         # Calculate new point based on jump size distribution and uniform for direction
-        jump_length = (power_law_exponential_cutoff(1, self.ALPHA, self.TAU_jump+1))*100
+        jump_length = (power_law_exponential_cutoff(1, self.ALPHA, self.TAU_jump)*100)
 
         theta = random.uniform(0, 2*math.pi)
         new_point = Point(self.geometry.x + jump_length * math.cos(theta),
             self.geometry.y + jump_length * math.sin(theta))
-        
+        print("NEW POINT: ",new_point)
         # Set new location as building closest to this point
         new_location = self.model.space.get_nearest_building(new_point)
         new_location.visited = True
