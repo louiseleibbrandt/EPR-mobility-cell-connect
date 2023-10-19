@@ -67,16 +67,18 @@ class Commuter(mg.GeoAgent):
         # Total time passed in minutes
         time_passed_m = (self.model.hour * 60) + self.model.minute
         # Get waiting time 
-        wait_time_m = (power_law_exponential_cutoff(1, self.BETA, self.TAU_time))*60
-        print("WAIT TIME: ", wait_time_m)
+        wait_time_m = (power_law_exponential_cutoff(1, self.TAU_time, self.BETA, self.TAU_time))*60
         # Set correct new time
         total_time_m = wait_time_m + time_passed_m
         self.wait_time_h = math.floor(total_time_m/60)
         self.wait_time_m = int((total_time_m-self.wait_time_h*60))
-
+         
+        
         # Hour resets ever 24 hours
         if (self.wait_time_h >= 24):
-            self.wait_time_h = math.floor(self.wait_time_h / 24)
+            self.wait_time_h = self.wait_time_h % 24
+
+        print(f"WAIT TIME: {self.wait_time_h}:{self.wait_time_m}")  
             
         
 
@@ -135,7 +137,6 @@ class Commuter(mg.GeoAgent):
             else:
                 self.model.space.move_commuter(self, self.destination.centroid,True)
                 self._set_wait_time()
-
                 if self.destination == self.next_location:
                     self.status = "work"
                 elif self.destination == self.my_home:
@@ -145,7 +146,7 @@ class Commuter(mg.GeoAgent):
 
     def _explore(self) -> None:
         # Calculate new point based on jump size distribution and uniform for direction
-        jump_length = (power_law_exponential_cutoff(1, self.ALPHA, self.TAU_jump)*100)
+        jump_length = (power_law_exponential_cutoff(1, self.TAU_jump, self.ALPHA, self.TAU_jump)*100)
 
         theta = random.uniform(0, 2*math.pi)
         new_point = Point(self.geometry.x + jump_length * math.cos(theta),

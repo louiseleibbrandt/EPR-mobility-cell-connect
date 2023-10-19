@@ -59,16 +59,14 @@ class RoadNetwork:
 
 
 class CampusWalkway(RoadNetwork):
-    region: str
     _path_select_cache: dict[
         tuple[mesa.space.FloatCoordinate, mesa.space.FloatCoordinate],
         list[mesa.space.FloatCoordinate],
     ]
 
-    def __init__(self, region, lines) -> None:
+    def __init__(self, lines) -> None:
         super().__init__(lines)
-        self.region = region
-        self._path_cache_result = f"outputs/{region}_path_cache_result.pkl"
+        self._path_cache_result = f"outputs/path_cache_result.pkl"
         try:
             with open(self._path_cache_result, "rb") as cached_result:
                 self._path_select_cache = pickle.load(cached_result)

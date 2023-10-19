@@ -5,12 +5,13 @@ import numpy as np
 from shapely.geometry import Point, LineString
 from pyproj import Transformer
 
-df = pd.read_csv('./outputs/trajectories/output.csv')
+df = pd.read_csv('./outputs/trajectories/output_trajectory.csv')
+#df = pd.read_csv('./outputs/trajectories/output_cell.csv')
 df['timestamp'] = pd.to_datetime(df['timestamp'])
 
 # filter dataframe by date
-start_date = '2023-05-03'
-end_date = '2023-05-04'
+start_date = '2023-05-01'
+end_date = '2023-05-15'
 mask = (df['timestamp'] >= start_date) & (df['timestamp'] <= end_date)
 df = df.loc[mask]
 #bounding_box = (4.3120,51.9807,4.3731,52.0239)
@@ -35,8 +36,8 @@ walkway_df.plot(ax=ax,color='gray')
 
 for i in range(len(agents)):
     agents_df = df[df['owner'].isin([agents[i]])] 
-    phone1_df = agents_df[agents_df['device'].isin([chr(i+65)+"_1"])] 
-    phone2_df = agents_df[agents_df['device'].isin([chr(i+65)+"_2"])] 
+    phone2_df = agents_df[agents_df['device'].isin([chr(i+65)+"_1"])] 
+    phone1_df = agents_df[agents_df['device'].isin([chr(i+65)+"_2"])] 
     
     lon1 = phone1_df['cellinfo.wgs84.lon']
     lat1 = phone1_df['cellinfo.wgs84.lat']
