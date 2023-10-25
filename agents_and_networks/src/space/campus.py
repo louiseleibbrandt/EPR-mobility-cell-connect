@@ -51,8 +51,9 @@ class Campus(mg.GeoSpace):
 
 
 
+    # def add_buildings(self, agents, types) -> None:
     def add_buildings(self, agents, types) -> None:
-        super().add_agents(agents)
+        # super().add_agents(agents)
         homes, works, other_buildings = [], [], []
         for (agent,type) in zip(agents,types):
             if isinstance(agent, Building):

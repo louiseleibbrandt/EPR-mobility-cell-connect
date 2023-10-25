@@ -4,10 +4,10 @@ import mesa
 import mesa_geo as mg
 from src.model.model import AgentsAndNetworks
 from src.visualization.server import (
-    agent_draw,
+    # agent_draw,
     clock_element,
-    status_chart,
-    location_chart,
+    # status_chart,
+    # location_chart,
 )
 
 
@@ -16,17 +16,14 @@ if __name__ == "__main__":
         "data_crs": "epsg:4326", "commuter_speed": 1.4
     }
 
-
-
     model_params = {
         "data_crs": region_params["data_crs"],
         "show_walkway": False,
         "building_source_types": ["apartments","house","allotment_house"],
         "building_destination_types": ["industrial","school","construction"],
-        "bounding_box": (4.3101,51.9004,4.5312,52.0354),
-        #"bounding_box":(4.3120,51.9807,4.3731,52.0239),
+        "bounding_box":(4.2009,51.8561,4.5978,52.1149),
         "num_commuters": mesa.visualization.Slider(
-            "Number of Commuters", value=18, min_value=1, max_value=150, step=10
+            "Number of Commuters", value=10, min_value=1, max_value=150, step=10
         ),
         "commuter_speed": mesa.visualization.Slider(
             "Commuter Walking Speed (m/s)",
@@ -37,7 +34,7 @@ if __name__ == "__main__":
         ),
         "step_duration": mesa.visualization.NumberInput(
             "Step Duration (seconds)",
-            value=10,
+            value=60,
         ),
         "alpha": mesa.visualization.NumberInput(
             "Exponent jump size distribution (truncated power law)",
@@ -57,18 +54,17 @@ if __name__ == "__main__":
         ),
         "rho": mesa.visualization.NumberInput(
             "Constant in probability of exploration",
-            value=0.5,
+            value=1,
         ),
         "gamma": mesa.visualization.NumberInput(
             "Exponent in probability of exploration",
-            value=2.0,
+            value=0,
         ),
         "buildings_file": f"data/zuid-holland/gis_osm_buildings_a_free_1.zip",
         "walkway_file": f"data/zuid-holland/gis_osm_roads_free_1.zip",
-        "celltower_file": f"data/20191202131001.csv",
     }
 
-    map_element = mg.visualization.MapModule(agent_draw, map_height=600, map_width=600)
+    # map_element = mg.visualization.MapModule(agent_draw, map_height=600, map_width=600)
     server = mesa.visualization.ModularServer(
         AgentsAndNetworks,
         #[map_element, clock_element, status_chart, location_chart],

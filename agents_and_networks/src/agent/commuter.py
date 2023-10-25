@@ -73,7 +73,6 @@ class Commuter(mg.GeoAgent):
         self.wait_time_h = math.floor(total_time_m/60)
         self.wait_time_m = int((total_time_m-self.wait_time_h*60))
          
-        
         # Hour resets ever 24 hours
         if (self.wait_time_h >= 24):
             self.wait_time_h = self.wait_time_h % 24
@@ -111,7 +110,7 @@ class Commuter(mg.GeoAgent):
             and (self.model.hour == self.wait_time_h and self.model.minute >= self.wait_time_m)
         ):
             self.origin = self.next_location
-            self.model.space.move_commuter(self, pos=self.geometry, update_idx = True)
+            # self.model.space.move_commuter(self, pos=self.geometry, update_idx = True)
             p = self.RHO*(math.pow(self.S,(-1*self.GAMMA)))
 
             if random.uniform(0, 1) < p:
@@ -164,7 +163,9 @@ class Commuter(mg.GeoAgent):
         
 
     def _return(self) -> None:
-        new_location= random.sample(population=self.visited_locations,k=1,counts=self.frequencies)
+        # while (new_location := random.sample(population=self.visited_locations,k=1,counts=self.frequencies)[0]) == self.next_location:
+        #     continue
+        new_location = random.sample(population=self.visited_locations,k=1,counts=self.frequencies)
         index = self.visited_locations.index(new_location[0])
         self.frequencies[index] += 1
         self.set_next_location(new_location[0])

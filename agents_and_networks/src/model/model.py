@@ -1,4 +1,3 @@
-import profile
 import uuid
 from functools import partial
 import geopandas as gpd
@@ -8,7 +7,6 @@ import mesa_geo as mg
 import pandas as pd
 from shapely.geometry import Point
 import csv
-from math import atan2,degrees
 
 from datetime import datetime
 
@@ -20,6 +18,7 @@ from src.space.road_network import CampusWalkway
 from shapely.geometry import Point
 from scipy.stats import poisson
 
+from scripts.timer import Timer
 from pyproj import Transformer
 
 
@@ -46,11 +45,6 @@ def get_average_visited_locations(model) -> list:
     return sum(commuters)/len(commuters)
 
 
-
-
-
-
-
 class AgentsAndNetworks(mesa.Model):
     running: bool
     schedule: mesa.time.RandomActivation
@@ -74,19 +68,18 @@ class AgentsAndNetworks(mesa.Model):
     hour: int
     minute: int
     second: int
-    celltowers: pd
-    p_time1: list[int]
-    p_time2: list[int]
-    writing_id_cell: int
+    timer: Timer
+    positions_to_write: list[int,float,float,datetime]
+    positions: list[float,float]
     writing_id_trajectory:int
     datacollector: mesa.DataCollector
+    
 
     def __init__(
         self,
         data_crs: str,
         buildings_file: str,
         walkway_file: str,
-        celltower_file: str,
         num_commuters,
         step_duration,
         alpha,
@@ -113,6 +106,9 @@ class AgentsAndNetworks(mesa.Model):
         self.building_destination_types = building_destination_types
         self.bounding_box = bounding_box
         self.step_duration = step_duration
+        self.positions_to_write = []
+        self.positions = []
+        self.timer = Timer()
 
         Commuter.SPEED = commuter_speed * step_duration  # meters per tick (5 seconds)
         Commuter.ALPHA = alpha
@@ -123,26 +119,23 @@ class AgentsAndNetworks(mesa.Model):
         Commuter.GAMMA = gamma
 
         self._load_buildings_from_file(buildings_file, crs=model_crs)
+
+        self.timer.start()
         self._load_road_vertices_from_file(walkway_file, crs=model_crs)
-        self._load_celltowers_from_file(celltower_file, crs=model_crs)
+        print("walkway loaded")
+        self.timer.stop()
+
         self._set_building_entrance()
+
         self.day = 0
         self.hour = 0
         self.minute = 0
         self.second = 0
-        self.writing_id_cell = 0
+        
         self.writing_id_trajectory = 0
         self._create_commuters() 
-        # self.p_time1 = np.random.exponential(3.45,self.num_commuters)*180
-        # self.p_time2 = np.random.exponential(3.45,self.num_commuters)*180
-        self.p_time1 = poisson.rvs(300,size=self.num_commuters)
-        self.p_time2 = poisson.rvs(300,size=self.num_commuters)
-
-        # reset output file
-        output_file_cell = open(f'././outputs/trajectories/output_cell.csv', 'w')
         output_file_trajectory = open(f'././outputs/trajectories/output_trajectory.csv', 'w')
-        csv.writer(output_file_cell).writerow(['id','owner','device','timestamp','cellinfo.wgs84.lon','cellinfo.wgs84.lat','cellinfo.azimuth_degrees','cell'])    
-        csv.writer(output_file_trajectory).writerow(['id','owner','device','timestamp','cellinfo.wgs84.lon','cellinfo.wgs84.lat','cellinfo.azimuth_degrees','cell'])    
+        csv.writer(output_file_trajectory).writerow(['id','owner','timestamp','cellinfo.wgs84.lon','cellinfo.wgs84.lat'])    
 
         self.datacollector = mesa.DataCollector(
             model_reporters={
@@ -162,7 +155,8 @@ class AgentsAndNetworks(mesa.Model):
         self.datacollector.collect(self)
 
     def _create_commuters(self) -> None:
-        for _ in range(self.num_commuters):
+        date = datetime(2023, 5, self.day+1, self.hour, self.minute, self.second, 0)
+        for i in range(self.num_commuters):
             random_home = self.space.get_random_home()
             commuter = Commuter(
                 unique_id=uuid.uuid4().int,
@@ -179,22 +173,41 @@ class AgentsAndNetworks(mesa.Model):
             commuter.state = "explore"
             self.space.add_commuter(commuter, True)
             self.schedule.add(commuter)
+            self.positions.append([commuter.geometry.x,commuter.geometry.y])
+            self.positions_to_write.append([i,commuter.geometry.x,commuter.geometry.y,date])
 
     def _load_buildings_from_file(
         self, buildings_file: str, crs: str
     ) -> None:
+        self.timer.start()
+        bounding_box_rotterdam = (4.4306,51.9035,4.5092,51.9488)
+        bounding_box_hague = (4.2617,52.0508,4.3571,52.1033)
         buildings_df = gpd.read_file(buildings_file, bbox=(self.bounding_box))
+        # buildings_df = gpd.read_file(buildings_file, bbox=(bounding_box_rotterdam)).append(gpd.read_file(buildings_file, bbox=(bounding_box_hague)))
+        print("buildings df read file1")
+        self.timer.stop()
+        self.timer.start()
         buildings_df = buildings_df[buildings_df['type'].isin(self.building_source_types+self.building_destination_types)] 
+        print("buildings df read file2")
+        self.timer.stop()
+        self.timer.start()
         buildings_type = [2 if x in self.building_source_types else 1 for x in buildings_df['type']]
+        print("buildings df type")
+        self.timer.stop()
+        self.timer.start()
         buildings_df.index.name = "unique_id"
         buildings_df = buildings_df.set_crs(self.data_crs, allow_override=True).to_crs(
             crs
         )
+        print("buildings df crs")
+        self.timer.stop()
         buildings_df["centroid"] = [
             (x, y) for x, y in zip(buildings_df.centroid.x, buildings_df.centroid.y)
         ]
+        
         building_creator = mg.AgentCreator(Building, model=self)
         buildings = building_creator.from_GeoDataFrame(buildings_df)
+
         self.space.add_buildings(buildings,buildings_type)
 
     def _load_road_vertices_from_file(
@@ -210,18 +223,6 @@ class AgentsAndNetworks(mesa.Model):
             walkway_creator = mg.AgentCreator(Walkway, model=self)
             walkway = walkway_creator.from_GeoDataFrame(walkway_df)
             self.space.add_agents(walkway)
-    
-    def _load_celltowers_from_file(
-            self, celltower_file: str, crs: str
-     ) -> None:
-            df = pd.read_csv(celltower_file)
-            df['lon'],df['lat'] =  Transformer.from_crs("EPSG:28992","EPSG:4979").transform(df['X'],df['Y'])
-            mask = (df['lat'] >= self.bounding_box[0]) & (df['lat'] <= self.bounding_box[2]) & (df['lon'] >= self.bounding_box[1]) & (df['lon'] <= self.bounding_box[3])
-            df = df.loc[mask]
-            df['Hoofdstraalrichting'] = df['Hoofdstraalrichting'].str.replace('\D', '')
-            df['Hoofdstraalrichting'] = df['Hoofdstraalrichting'].str.replace(' ', '')
-            self.celltowers = df
-            print(self.celltowers)
 
 
     def _set_building_entrance(self) -> None:
@@ -234,68 +235,38 @@ class AgentsAndNetworks(mesa.Model):
 
 
     def step(self) -> None:
-        
+
         self.__update_clock()
+
+        self.timer.start()
         self.schedule.step()
-        
+        print("schedule step")
+        self.timer.stop()
 
-        time_passed_seconds = self.hour*60*60 + self.minute*60 + self.second
-        
-
+        time = datetime(2023, 5, self.day+1, self.hour, self.minute, self.second, 0)
         for i in range(self.num_commuters):
-            # should reset ever 24 hours (24*60)
-            
-            self.__write_to_file(i, 1, False)
+            commuter = self.schedule.agents[i]
+            x = commuter.geometry.x
+            y = commuter.geometry.y
+            if (self.positions[i][0] != x or self.positions[i][1] != y):
+                self.positions_to_write.append([i,x,y,time])
+                self.positions[i][0] = x
+                self.positions[i][1] = y
 
-            if (time_passed_seconds <= self.step_duration):
-                # self.p_time1[i] = np.random.exponential(3.45,1)*180
-                # self.p_time2[i] = np.random.exponential(3.45,1)*180
-                self.p_time1[i] = poisson.rvs(300)
-                self.p_time2[i] = poisson.rvs(300)
 
-            if (time_passed_seconds >= self.p_time1[i]):
-                self.p_time1[i] = time_passed_seconds+ poisson.rvs(300)
-                self.__write_to_file(i, 1, True)
-            if (time_passed_seconds >= self.p_time2[i]):
-                # self.p_time2[i] = time_passed_seconds + np.random.exponential(3.45,1)*180
-                self.p_time2[i] = time_passed_seconds + poisson.rvs(300)
-                self.__write_to_file(i, 2, True)
-        self.datacollector.collect(self)
+        if (self.minute == 0 & self.second==0):
+            self.__write_to_file()
+            self.positions_to_write = []
+                
     
-
-    def __write_to_file(self, agent: int, phone: int, cell: bool) -> None:
-        if (cell):
-            output_file = open('././outputs/trajectories/output_cell.csv', 'a')
-        else:
-            output_file = open('././outputs/trajectories/output_trajectory.csv', 'a')
+    def __write_to_file(self) -> None:
+        output_file = open('././outputs/trajectories/output_trajectory.csv', 'a')
         output_writer = csv.writer(output_file)
-
-        commuter = self.schedule.agents[agent]
-        y,x = Transformer.from_crs("EPSG:3857","EPSG:4326").transform(commuter.geometry.x,commuter.geometry.y)
-
-        if cell:
-            position = np.array((x,y))
-            all_cells = np.array(list(zip(self.celltowers['lat'],self.celltowers['lon'])))
-            distances = np.linalg.norm(all_cells-position, axis=1)
-            found = False
-
-            while (not found):
-                index = np.argmin(distances)
-                degree_cell = self.celltowers['Hoofdstraalrichting'].iloc[index]
-                degree_actual = (degrees(atan2(y-all_cells[index][1], x-all_cells[index][0]))+360)%360
-                if (degree_actual >= int(degree_cell) - 60 and degree_actual <= int(degree_cell) + 60):
-                    found = True
-                else:
-                    distances[index] = float('inf')
-        
-            output_writer.writerow([self.writing_id_cell, f"Agent{chr(agent + 65)}", f"{chr(agent + 65)}_{phone}", 
-                                   datetime(2023, 5, self.day+1, self.hour, self.minute, self.second, 0),
-                                   all_cells[index][0],all_cells[index][1],degree_cell,"0-0-0"])
-            self.writing_id_cell += 1
-        else:
-            output_writer.writerow([self.writing_id_trajectory, f"Agent{chr(agent + 65)}", f"{chr(agent + 65)}_{phone}", 
-                                   datetime(2023, 5, self.day+1, self.hour, self.minute, self.second, 0),
-                                   x,y,180,"0-0-0"])
+        for pos in self.positions_to_write:
+            lon,lat = Transformer.from_crs("EPSG:3857","EPSG:4326").transform(pos[1],pos[2])
+            output_writer.writerow([self.writing_id_trajectory, f"Agent{pos[0]}", 
+                                   pos[3],
+                                   lat,lon])
             self.writing_id_trajectory += 1
         output_file.close()
         
