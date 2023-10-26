@@ -18,12 +18,13 @@ if __name__ == "__main__":
 
     model_params = {
         "data_crs": region_params["data_crs"],
-        "show_walkway": False,
+        "start_date": '2023-05-01',
         "building_source_types": ["apartments","house","allotment_house"],
         "building_destination_types": ["industrial","school","construction"],
-        "bounding_box":(4.2009,51.8561,4.5978,52.1149),
+        "bounding_box":(4.3739,51.8451,4.5786,51.9623),
+        # "bounding_box":(4.2009,51.8561,4.5978,52.1149),
         "num_commuters": mesa.visualization.Slider(
-            "Number of Commuters", value=10, min_value=1, max_value=150, step=10
+            "Number of Commuters", value=100, min_value=1, max_value=150, step=10
         ),
         "commuter_speed": mesa.visualization.Slider(
             "Commuter Walking Speed (m/s)",
@@ -50,15 +51,15 @@ if __name__ == "__main__":
         ),
         "tau_time": mesa.visualization.NumberInput(
             "Max time (hour) waiting time distribution (truncated power law)",
-            value=10,
+            value=17,
         ),
         "rho": mesa.visualization.NumberInput(
             "Constant in probability of exploration",
-            value=1,
+            value=0.5,
         ),
         "gamma": mesa.visualization.NumberInput(
             "Exponent in probability of exploration",
-            value=0,
+            value=2,
         ),
         "buildings_file": f"data/zuid-holland/gis_osm_buildings_a_free_1.zip",
         "walkway_file": f"data/zuid-holland/gis_osm_roads_free_1.zip",

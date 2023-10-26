@@ -8,17 +8,15 @@ import pandas as pd
 from shapely.geometry import Point
 import csv
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from src.agent.building import Building
 from src.agent.commuter import Commuter
-from src.agent.geo_agents import Walkway
-from src.space.campus import Campus
-from src.space.road_network import CampusWalkway
+from src.space.netherlands import Netherlands
+from src.space.road_network import NetherlandsWalkway
 from shapely.geometry import Point
 from scipy.stats import poisson
 
-from scripts.timer import Timer
 from pyproj import Transformer
 
 
@@ -49,10 +47,10 @@ class AgentsAndNetworks(mesa.Model):
     running: bool
     schedule: mesa.time.RandomActivation
     output_file: csv
-    show_walkway: bool
+    start_date: str
     current_id: int
-    space: Campus
-    walkway: CampusWalkway
+    space: Netherlands
+    walkway: NetherlandsWalkway
     building_source_types: list
     building_destination_types: list
     bounding_box:list
@@ -68,7 +66,6 @@ class AgentsAndNetworks(mesa.Model):
     hour: int
     minute: int
     second: int
-    timer: Timer
     positions_to_write: list[int,float,float,datetime]
     positions: list[float,float]
     writing_id_trajectory:int
@@ -93,13 +90,13 @@ class AgentsAndNetworks(mesa.Model):
         bounding_box,
         commuter_speed=1.0,
         model_crs="epsg:3857",
-        show_walkway=False,
+        start_date="2023-05-01",
     ) -> None:
         super().__init__()
         self.schedule = mesa.time.RandomActivation(self)
-        self.show_walkway = show_walkway
+        self.start_date = datetime.strptime(start_date,"%Y-%m-%d")
         self.data_crs = data_crs
-        self.space = Campus(crs=model_crs)
+        self.space = Netherlands(crs=model_crs)
         self.num_commuters = num_commuters
         self.space.number_commuters = num_commuters
         self.building_source_types = building_source_types
@@ -108,7 +105,6 @@ class AgentsAndNetworks(mesa.Model):
         self.step_duration = step_duration
         self.positions_to_write = []
         self.positions = []
-        self.timer = Timer()
 
         Commuter.SPEED = commuter_speed * step_duration  # meters per tick (5 seconds)
         Commuter.ALPHA = alpha
@@ -119,11 +115,8 @@ class AgentsAndNetworks(mesa.Model):
         Commuter.GAMMA = gamma
 
         self._load_buildings_from_file(buildings_file, crs=model_crs)
-
-        self.timer.start()
         self._load_road_vertices_from_file(walkway_file, crs=model_crs)
-        print("walkway loaded")
-        self.timer.stop()
+
 
         self._set_building_entrance()
 
@@ -155,7 +148,8 @@ class AgentsAndNetworks(mesa.Model):
         self.datacollector.collect(self)
 
     def _create_commuters(self) -> None:
-        date = datetime(2023, 5, self.day+1, self.hour, self.minute, self.second, 0)
+        # date = datetime(2023, 5, self.day+1, self.hour, self.minute, self.second, 0)
+        date = self.start_date
         for i in range(self.num_commuters):
             random_home = self.space.get_random_home()
             commuter = Commuter(
@@ -179,28 +173,13 @@ class AgentsAndNetworks(mesa.Model):
     def _load_buildings_from_file(
         self, buildings_file: str, crs: str
     ) -> None:
-        self.timer.start()
-        bounding_box_rotterdam = (4.4306,51.9035,4.5092,51.9488)
-        bounding_box_hague = (4.2617,52.0508,4.3571,52.1033)
         buildings_df = gpd.read_file(buildings_file, bbox=(self.bounding_box))
-        # buildings_df = gpd.read_file(buildings_file, bbox=(bounding_box_rotterdam)).append(gpd.read_file(buildings_file, bbox=(bounding_box_hague)))
-        print("buildings df read file1")
-        self.timer.stop()
-        self.timer.start()
         buildings_df = buildings_df[buildings_df['type'].isin(self.building_source_types+self.building_destination_types)] 
-        print("buildings df read file2")
-        self.timer.stop()
-        self.timer.start()
         buildings_type = [2 if x in self.building_source_types else 1 for x in buildings_df['type']]
-        print("buildings df type")
-        self.timer.stop()
-        self.timer.start()
         buildings_df.index.name = "unique_id"
         buildings_df = buildings_df.set_crs(self.data_crs, allow_override=True).to_crs(
             crs
         )
-        print("buildings df crs")
-        self.timer.stop()
         buildings_df["centroid"] = [
             (x, y) for x, y in zip(buildings_df.centroid.x, buildings_df.centroid.y)
         ]
@@ -218,11 +197,7 @@ class AgentsAndNetworks(mesa.Model):
             .set_crs(self.data_crs, allow_override=True)
             .to_crs(crs)
         )
-        self.walkway = CampusWalkway(lines=walkway_df["geometry"])
-        if self.show_walkway:
-            walkway_creator = mg.AgentCreator(Walkway, model=self)
-            walkway = walkway_creator.from_GeoDataFrame(walkway_df)
-            self.space.add_agents(walkway)
+        self.walkway = NetherlandsWalkway(lines=walkway_df["geometry"])
 
 
     def _set_building_entrance(self) -> None:
@@ -235,15 +210,12 @@ class AgentsAndNetworks(mesa.Model):
 
 
     def step(self) -> None:
-
         self.__update_clock()
-
-        self.timer.start()
         self.schedule.step()
-        print("schedule step")
-        self.timer.stop()
 
-        time = datetime(2023, 5, self.day+1, self.hour, self.minute, self.second, 0)
+        total_seconds = self.day*24*60*60 + self.hour*60*60 + self.minute*60 + self.second
+        time = self.start_date + timedelta(seconds = total_seconds)
+
         for i in range(self.num_commuters):
             commuter = self.schedule.agents[i]
             x = commuter.geometry.x

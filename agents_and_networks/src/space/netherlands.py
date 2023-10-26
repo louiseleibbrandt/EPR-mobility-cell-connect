@@ -11,7 +11,7 @@ from src.agent.commuter import Commuter
 from src.agent.geo_agents import Path
 from operator import itemgetter
 
-class Campus(mg.GeoSpace):
+class Netherlands(mg.GeoSpace):
     homes: Tuple[Building]
     works: Tuple[Building]
     other_buildings: Tuple[Building]

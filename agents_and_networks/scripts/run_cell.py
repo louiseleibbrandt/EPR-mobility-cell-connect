@@ -20,15 +20,17 @@ bounding_box = (4.2009,51.8561,4.5978,52.1149)
 
 # Start and End date for trajectory analysis
 start_date = '2023-05-01'
-end_date = '2023-05-05'
+end_date = '2023-05-04'
+
+
 
 # Read in cell and trajectory data
 df_cell = pd.read_csv('./data/20191202131001.csv')
-df_trajectory = pd.read_csv('./outputs/trajectories/output_trajectory.csv')
-
-# extra refinements trajectory
+df_trajectory = pd.read_csv('./outputs/trajectories/Final/Explorer/output_trajectory.csv')
 mask = (df_trajectory['timestamp'] >= start_date) & (df_trajectory['timestamp'] <= end_date)
 df_trajectory = df_trajectory.loc[mask]
+# df_trajectory = pd.read_csv('./outputs/trajectories/output_trajectory.csv')
+# extra refinements trajectory
 start = datetime.strptime(start_date,"%Y-%m-%d")
 df_trajectory['seconds'] = [(datetime.strptime(x,"%Y-%m-%d %H:%M:%S") - start).total_seconds() for x in df_trajectory['timestamp']]
 
@@ -51,15 +53,14 @@ for i in range(len(agents)):
 
     for phone in range(2):
         index = 0
-        p_time = poisson.rvs(600)
+        p_time = poisson.rvs(3600)
         x_old, y_old = 0,0
         cellx, celly, degree = 0,0,0
 
 
         while(p_time <= max):
-            while (agents_df['seconds'].iloc[index] <= p_time):
+            while (agents_df['seconds'].iloc[index] < p_time):
                 index += 1
-            print(index)
             x = agents_df['cellinfo.wgs84.lon'].iloc[index-1]
             y = agents_df['cellinfo.wgs84.lat'].iloc[index-1]
 
@@ -86,7 +87,7 @@ for i in range(len(agents)):
             output_writer.writerow([writing_id, f"Agent{i}", f"{i}_{phone+1}", 
                         start + timedelta(seconds = p_time), cellx, celly, degree,"0-0-0"])
             
-            p_time += poisson.rvs(300)
+            p_time += poisson.rvs(3600)
             writing_id += 1
 
 

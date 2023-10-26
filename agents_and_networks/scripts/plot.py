@@ -1,58 +1,51 @@
 import matplotlib.pyplot as plt
 import pandas as pd
 import geopandas as gpd
-import numpy as np
-from shapely.geometry import Point, LineString
-from pyproj import Transformer
 
-df = pd.read_csv('./outputs/trajectories/output_trajectory.csv')
-#df = pd.read_csv('./outputs/trajectories/output_cell.csv')
-df['timestamp'] = pd.to_datetime(df['timestamp'])
+df_cell = pd.read_csv('./outputs/trajectories/output_cell.csv')
+df_trajectory = pd.read_csv('./outputs/trajectories/output_trajectory.csv')
 
-# filter dataframe by date
-start_date = '2023-05-01'
-end_date = '2023-05-15'
-mask = (df['timestamp'] >= start_date) & (df['timestamp'] <= end_date)
-df = df.loc[mask]
-# bounding_box = (4.3120,51.9807,4.3731,52.0239)
-#bounding_box = (4.3101,51.9004,4.5312,52.0354)
+df_cell['timestamp'] = pd.to_datetime(df_cell['timestamp'])
+df_trajectory['timestamp'] = pd.to_datetime(df_trajectory['timestamp'])
+
 bounding_box = (4.2009,51.8561,4.5978,52.1149)
+
 walkway_file = "./data/zuid-holland/gis_osm_roads_free_1.zip"
 
-#"epsg:3857"
-
-
-colors = ['red','salmon','blue','royalblue', 'green','lightgreen','orange','bisque','purple','plum',
-          'red','salmon','blue','royalblue', 'green','lightgreen','orange','bisque','purple','plum',
-          'red','salmon','blue','royalblue', 'green','lightgreen','orange','bisque','purple','plum',
-          'red','salmon','blue','royalblue', 'green','lightgreen','orange','bisque','purple','plum']
-
-agents = sorted(pd.unique(df['owner']))
-
-fig, ax = plt.subplots()
+fig, (ax1,ax2,ax3) = plt.subplots(1,3)
 walkway_df = (
             gpd.read_file(walkway_file, bounding_box)
         )
-walkway_df.plot(ax=ax,color='gray')
+walkway_df.plot(ax=ax1,color='black')
+walkway_df.plot(ax=ax2,color='black')
+walkway_df.plot(ax=ax3,color='black')
+
+agents = sorted(pd.unique(df_trajectory['owner']))
 
 for i in range(len(agents)):
-    agents_df = df[df['owner'].isin([agents[i]])] 
-    # phone2_df = agents_df[agents_df['device'].isin([chr(i+65)+"_1"])] 
-    # phone1_df = agents_df[agents_df['device'].isin([chr(i+65)+"_2"])] 
-    lon = agents_df['cellinfo.wgs84.lon']
-    lat = agents_df['cellinfo.wgs84.lat']
+    agents_cell = df_cell[df_cell['owner'].isin([agents[i]])] 
+    agents_trajectory = df_trajectory[df_trajectory['owner'].isin([agents[i]])] 
+
+    lon = agents_trajectory['cellinfo.wgs84.lon']
+    lat = agents_trajectory['cellinfo.wgs84.lat']
+    ax1.plot(lon, lat,zorder=5)
+    ax1.scatter(lon, lat,zorder=10)
+    ax1.set_title('Trajectory')
+
+    phone1_df = agents_cell[agents_cell['device'].isin([str(i)+"_2"])] 
+    phone2_df = agents_cell[agents_cell['device'].isin([str(i)+"_1"])] 
     
-    # lon1 = phone1_df['cellinfo.wgs84.lon']
-    # lat1 = phone1_df['cellinfo.wgs84.lat']
-    # lon2 = phone2_df['cellinfo.wgs84.lon']
-    # lat2 = phone2_df['cellinfo.wgs84.lat']
-    # print(colors[2*i-1])
-    # plt.plot(lon1, lat1,color=colors[2*i+1],zorder=5)
-    # plt.scatter(lon1, lat1,color=colors[2*i+1],zorder=10)
-    # print(colors[2*i])
-    # plt.plot(lon2, lat2,color=colors[2*i],zorder=5)
-    # plt.scatter(lon2, lat2,color=colors[2*i],zorder=10)
-    plt.plot(lon, lat,zorder=5)
-    plt.scatter(lon, lat,zorder=10)
+    lon1 = phone1_df['cellinfo.wgs84.lon']
+    lat1 = phone1_df['cellinfo.wgs84.lat']
+    lon2 = phone2_df['cellinfo.wgs84.lon']
+    lat2 = phone2_df['cellinfo.wgs84.lat']
+
+    ax2.plot(lon1, lat1,zorder=5)
+    ax2.scatter(lon1, lat1,zorder=10)
+    ax2.set_title('Cell Towers: Phone 1')
+    ax3.plot(lon2, lat2,zorder=5)
+    ax3.scatter(lon2, lat2,zorder=10)
+    ax3.set_title('Cell Towers: Phone 2')
+    
 
 plt.show()

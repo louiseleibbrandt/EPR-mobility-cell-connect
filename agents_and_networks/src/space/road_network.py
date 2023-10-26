@@ -58,7 +58,7 @@ class RoadNetwork:
         return path
 
 
-class CampusWalkway(RoadNetwork):
+class NetherlandsWalkway(RoadNetwork):
     _path_select_cache: dict[
         tuple[mesa.space.FloatCoordinate, mesa.space.FloatCoordinate],
         list[mesa.space.FloatCoordinate],
