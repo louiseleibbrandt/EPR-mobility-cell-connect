@@ -2,6 +2,7 @@ from __future__ import annotations
 import math
 
 import random
+import sys
 import uuid
 
 import mesa
@@ -37,7 +38,6 @@ class Commuter(mg.GeoAgent):
     wait_time_h: int  # time to start going to work, hour and minute
     wait_time_m: int
     status: str  # work, home, or transport
-    state: str # explore, preferential return
     SPEED: float
     ALPHA: float # jump
     TAU_jump: float # max jump
@@ -77,7 +77,6 @@ class Commuter(mg.GeoAgent):
         if (self.wait_time_h >= 24):
             self.wait_time_h = self.wait_time_h % 24
 
-        print(f"WAIT TIME: {self.wait_time_h}:{self.wait_time_m}")  
             
         
 
@@ -114,10 +113,8 @@ class Commuter(mg.GeoAgent):
             p = self.RHO*(math.pow(self.S,(-1*self.GAMMA)))
 
             if random.uniform(0, 1) < p:
-                self.state="explore"
                 self._explore()
             else:
-                self.state="return"
                 self._return()
             
             self.destination = self.model.space.get_building_by_id(
@@ -136,39 +133,62 @@ class Commuter(mg.GeoAgent):
             else:
                 self.model.space.move_commuter(self, self.destination.centroid,True)
                 self._set_wait_time()
-                if self.destination == self.next_location:
+                if self.destination == self.my_work:
+                    print("Work!")
                     self.status = "work"
                 elif self.destination == self.my_home:
+                    print("HOME!")
                     self.status = "home"
                 
 
 
     def _explore(self) -> None:
-        # Calculate new point based on jump size distribution and uniform for direction
-        jump_length = (power_law_exponential_cutoff(1, self.TAU_jump, self.ALPHA, self.TAU_jump)*100)
+        # Draw jump length from power distribution
+        # jump_length = (power_law_exponential_cutoff(1, self.TAU_jump, self.ALPHA, self.TAU_jump)*100)
+        # length = 1000000
+        # min_length = 1000000
+        # max_search = 0
 
+        # # Search for new location with travelling distance similar to jump length (allowing 20% extra length)
+        # # Runs for max 10 iterations, if no location found, pick location with min traveling distance
+        # while(length >= jump_length+(jump_length*0.2) + 200 and max_search < 5):
+        #     # Calculate new point based on random angle starting at current position
+        #     theta = random.uniform(0, 2*math.pi)
+        #     new_point = Point(self.geometry.x + jump_length * math.cos(theta),
+        #         self.geometry.y + jump_length * math.sin(theta))
+        #     new_location = self.model.space.get_nearest_building(new_point)
+            
+        #     # Calculate length to new location
+        #     length = self.model.walkway.get_length_shortest_path(source=self.origin.entrance_pos, target=new_location.entrance_pos)
+            
+        #     # Update min parameters
+        #     if (length < min_length): min_length, min_location = length, new_location
+        #     max_search += 1
+        jump_length = (power_law_exponential_cutoff(1, self.TAU_jump, self.ALPHA, self.TAU_jump)*100)
         theta = random.uniform(0, 2*math.pi)
         new_point = Point(self.geometry.x + jump_length * math.cos(theta),
-            self.geometry.y + jump_length * math.sin(theta))
-        print("NEW POINT: ",new_point)
+        self.geometry.y + jump_length * math.sin(theta))
+        min_location = self.model.space.get_nearest_building(new_point)
+
         # Set new location as building closest to this point
-        new_location = self.model.space.get_nearest_building(new_point)
-        new_location.visited = True
-        self.set_next_location(new_location)
+        min_location.visited = True
+        self.set_next_location(min_location)
 
         # Update parameters 
         self.S = self.S + 1
-        self.visited_locations.append(new_location)
+        self.visited_locations.append(min_location)
         self.frequencies.append(1)
         
 
     def _return(self) -> None:
-        # while (new_location := random.sample(population=self.visited_locations,k=1,counts=self.frequencies)[0]) == self.next_location:
-        #     continue
-        new_location = random.sample(population=self.visited_locations,k=1,counts=self.frequencies)
+        while (new_location := random.sample(population=self.visited_locations,k=1,counts=self.frequencies))[0] == self.next_location:
+             continue
+        # new_location = random.sample(population=self.visited_locations,k=1,counts=self.frequencies)
         index = self.visited_locations.index(new_location[0])
         self.frequencies[index] += 1
         self.set_next_location(new_location[0])
+
+
 
 
     def _path_select(self) -> None:

@@ -56,6 +56,16 @@ class RoadNetwork:
         #                         to_node_pos, method="dijkstra", weight="length")
         path = nx.astar_path(self.nx_graph, from_node_pos, to_node_pos, weight="length")
         return path
+    
+    def get_length_shortest_path(
+        self, source: mesa.space.FloatCoordinate, target: mesa.space.FloatCoordinate
+    ) -> int:
+        from_node_pos = self.get_nearest_node(source)
+        to_node_pos = self.get_nearest_node(target)
+        # return nx.shortest_path(self.nx_graph, from_node_pos,
+        #                         to_node_pos, method="dijkstra", weight="length")
+        length = nx.astar_path_length(self.nx_graph, from_node_pos, to_node_pos, weight="length")
+        return length
 
 
 class NetherlandsWalkway(RoadNetwork):

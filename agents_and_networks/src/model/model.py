@@ -30,11 +30,6 @@ def get_num_commuters_by_status(model, status: str) -> int:
     ]
     return len(commuters)
 
-def get_num_commuters_by_state(model, state: str) -> int:
-    commuters = [
-        commuter for commuter in model.schedule.agents if commuter.state == state
-    ]
-    return len(commuters)
 
 def get_average_visited_locations(model) -> list:
     commuters = [
@@ -128,15 +123,13 @@ class AgentsAndNetworks(mesa.Model):
         self.writing_id_trajectory = 0
         self._create_commuters() 
         output_file_trajectory = open(f'././outputs/trajectories/output_trajectory.csv', 'w')
-        csv.writer(output_file_trajectory).writerow(['id','owner','timestamp','cellinfo.wgs84.lon','cellinfo.wgs84.lat'])    
+        csv.writer(output_file_trajectory).writerow(['id','owner','timestamp','cellinfo.wgs84.lon','cellinfo.wgs84.lat','status'])    
 
         self.datacollector = mesa.DataCollector(
             model_reporters={
                 "time": get_time,
                 "status_home": partial(get_num_commuters_by_status, status="home"),
                 "status_work": partial(get_num_commuters_by_status, status="work"),
-                "state_explore": partial(get_num_commuters_by_state, state="explore"),
-                "state_return": partial(get_num_commuters_by_state, state="return"),
                 "status_traveling": partial(
                     get_num_commuters_by_status, status="transport"
                 ),
@@ -152,6 +145,7 @@ class AgentsAndNetworks(mesa.Model):
         date = self.start_date
         for i in range(self.num_commuters):
             random_home = self.space.get_random_home()
+            random_work = self.space.get_random_work()
             commuter = Commuter(
                 unique_id=uuid.uuid4().int,
                 model=self,
@@ -159,12 +153,13 @@ class AgentsAndNetworks(mesa.Model):
                 crs=self.space.crs,
             )
             commuter.set_home(random_home)
+            commuter.set_work(random_work)
             commuter.set_next_location(commuter.my_home)
             random_home.visited = True
-            commuter.set_visited_location(random_home,1)
+            commuter.set_visited_location(random_home,50)
+            commuter.set_visited_location(random_work,50)
             commuter.S = 1
             commuter.status = "home"
-            commuter.state = "explore"
             self.space.add_commuter(commuter, True)
             self.schedule.add(commuter)
             self.positions.append([commuter.geometry.x,commuter.geometry.y])
@@ -221,7 +216,7 @@ class AgentsAndNetworks(mesa.Model):
             x = commuter.geometry.x
             y = commuter.geometry.y
             if (self.positions[i][0] != x or self.positions[i][1] != y):
-                self.positions_to_write.append([i,x,y,time])
+                self.positions_to_write.append([i,x,y,time,commuter.status])
                 self.positions[i][0] = x
                 self.positions[i][1] = y
 
@@ -238,9 +233,13 @@ class AgentsAndNetworks(mesa.Model):
             lon,lat = Transformer.from_crs("EPSG:3857","EPSG:4326").transform(pos[1],pos[2])
             output_writer.writerow([self.writing_id_trajectory, f"Agent{pos[0]}", 
                                    pos[3],
-                                   lat,lon])
+                                   lat,lon,pos[4]])
             self.writing_id_trajectory += 1
         output_file.close()
+        total_seconds = self.day*24*60*60 + self.hour*60*60 + self.minute*60 + self.second
+        time = self.start_date + timedelta(seconds = total_seconds)
+        print("time: ",time)
+        print("average locations: ",get_average_visited_locations(self))
         
 
 

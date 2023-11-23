@@ -98,3 +98,9 @@ agents_and_networks/outputs/trajectories/output_trajectory1.csv
 agents_and_networks/outputs/trajectories/output_trajectory30days.csv
 agents_and_networks/outputs/trajectories/Final/Explorer/output_cell.csv
 agents_and_networks/outputs/trajectories/Final/Explorer/output_trajectory.csv
+agents_and_networks/outputs/trajectories/Final_Eval/Returner/combined/output_trajectory.csv
+agents_and_networks/outputs/trajectories/Final_Eval/Returner/no_overlap/output_cell.csv
+*.csv
+agents_and_networks/scripts/run_cell/run_cell2.py
+agents_and_networks/scripts/utils/timer.py
+*.txt

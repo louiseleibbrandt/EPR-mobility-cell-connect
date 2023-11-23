@@ -4,10 +4,10 @@ import mesa
 import mesa_geo as mg
 from src.model.model import AgentsAndNetworks
 from src.visualization.server import (
-    # agent_draw,
+    agent_draw,
     clock_element,
-    # status_chart,
-    # location_chart,
+    status_chart,
+    location_chart,
 )
 
 
@@ -21,10 +21,11 @@ if __name__ == "__main__":
         "start_date": '2023-05-01',
         "building_source_types": ["apartments","house","allotment_house"],
         "building_destination_types": ["industrial","school","construction"],
-        "bounding_box":(4.3739,51.8451,4.5786,51.9623),
+        # "bounding_box":(4.3739,51.8451,4.5786,51.9623),
         # "bounding_box":(4.2009,51.8561,4.5978,52.1149),
+        "bounding_box":(4.3437,51.9987,4.3775,52.0186),
         "num_commuters": mesa.visualization.Slider(
-            "Number of Commuters", value=100, min_value=1, max_value=150, step=10
+            "Number of Commuters", value=20, min_value=1, max_value=150, step=10
         ),
         "commuter_speed": mesa.visualization.Slider(
             "Commuter Walking Speed (m/s)",
@@ -55,7 +56,7 @@ if __name__ == "__main__":
         ),
         "rho": mesa.visualization.NumberInput(
             "Constant in probability of exploration",
-            value=0.5,
+            value=1,
         ),
         "gamma": mesa.visualization.NumberInput(
             "Exponent in probability of exploration",
@@ -65,11 +66,11 @@ if __name__ == "__main__":
         "walkway_file": f"data/zuid-holland/gis_osm_roads_free_1.zip",
     }
 
-    # map_element = mg.visualization.MapModule(agent_draw, map_height=600, map_width=600)
+    map_element = mg.visualization.MapModule(agent_draw, map_height=600, map_width=600)
     server = mesa.visualization.ModularServer(
         AgentsAndNetworks,
-        #[map_element, clock_element, status_chart, location_chart],
-        [clock_element],
+        [map_element, clock_element],
+        # [clock_element],
         "Agents and Networks",
         model_params,
     )

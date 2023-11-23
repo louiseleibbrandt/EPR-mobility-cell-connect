@@ -37,7 +37,7 @@ def agent_draw(agent):
         if agent.status == "home":
             portrayal["color"] = "Green"
         elif agent.status == "work":
-            portrayal["color"] = "Blue"
+            portrayal["color"] = "Green"
         elif agent.status == "transport":
             portrayal["color"] = "Red"
         else:

@@ -4,12 +4,10 @@ from typing import DefaultDict, Dict, Optional, Set, Tuple
 
 import mesa
 import mesa_geo as mg
-from shapely.geometry import LineString,Point
+from shapely.geometry import Point
 
 from src.agent.building import Building
 from src.agent.commuter import Commuter
-from src.agent.geo_agents import Path
-from operator import itemgetter
 
 class Netherlands(mg.GeoSpace):
     homes: Tuple[Building]
