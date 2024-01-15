@@ -22,10 +22,11 @@ if __name__ == "__main__":
         "building_source_types": ["apartments","house","allotment_house"],
         "building_destination_types": ["industrial","school","construction"],
         # "bounding_box":(4.3739,51.8451,4.5786,51.9623),
-        # "bounding_box":(4.2009,51.8561,4.5978,52.1149),
-        "bounding_box":(4.3437,51.9987,4.3775,52.0186),
+        "bounding_box":(4.2009,51.8561,4.5978,52.1149),
+        # "bounding_box":(4.3437,51.9987,4.3775,52.0186),
+
         "num_commuters": mesa.visualization.Slider(
-            "Number of Commuters", value=20, min_value=1, max_value=150, step=10
+            "Number of Commuters", value=100, min_value=1, max_value=150, step=10
         ),
         "commuter_speed": mesa.visualization.Slider(
             "Commuter Walking Speed (m/s)",
@@ -69,8 +70,8 @@ if __name__ == "__main__":
     map_element = mg.visualization.MapModule(agent_draw, map_height=600, map_width=600)
     server = mesa.visualization.ModularServer(
         AgentsAndNetworks,
-        [map_element, clock_element],
-        # [clock_element],
+        # [map_element, clock_element],
+        [clock_element],
         "Agents and Networks",
         model_params,
     )

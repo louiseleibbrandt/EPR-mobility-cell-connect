@@ -1,20 +1,27 @@
 
 import pandas as pd
 import re
+import matplotlib.pyplot as plt
+import numpy as np
 
-start_date = '2023-07-01'
-end_date = '2023-07-31'
+start_date = '2023-06-01'
+end_date = '2023-06-03'
 
-df_cell = pd.read_csv('./outputs/trajectories/Final_Eval/Explorer/output_cell.csv')
+df_cell = pd.read_csv('././outputs/trajectories/Returners/Eval/sampling2/output_cell.csv')
 
 mask = (df_cell['timestamp'] >= start_date) & (df_cell['timestamp'] <= end_date)
 df_cell = df_cell.loc[mask]
 
-output_file = open('./outputs/trajectories/Final_Eval/Explorer/output_cell_small.csv', 'w')
+output_file = open('././outputs/trajectories/Returners/Eval/sampling2/output_cell_smallest.csv', 'w')
 
 
 df_cell.to_csv(output_file, mode='a', index=False, header=True)
+# x = []
 
+# for i in range (0,500):
+#     x.append(np.random.default_rng().exponential(scale=1/3600))
+# plt.hist(x)
+# plt.show()
 
 # start_date = '2023-07-01'
 # end_date = '2023-07-31'

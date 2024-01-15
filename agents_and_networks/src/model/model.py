@@ -64,6 +64,7 @@ class AgentsAndNetworks(mesa.Model):
     positions_to_write: list[int,float,float,datetime]
     positions: list[float,float]
     writing_id_trajectory:int
+    common_work: Building
     datacollector: mesa.DataCollector
     
 
@@ -119,6 +120,11 @@ class AgentsAndNetworks(mesa.Model):
         self.hour = 0
         self.minute = 0
         self.second = 0
+
+        # x,y = Transformer.from_crs("EPSG:4326","EPSG:3857").transform((self.bounding_box[1] + self.bounding_box[3])/2,(self.bounding_box[0] + self.bounding_box[2])/2)
+        # new_point = Point(x,y)
+        
+        # self.common_work= self.space.get_nearest_building(new_point)
         
         self.writing_id_trajectory = 0
         self._create_commuters() 
@@ -139,13 +145,14 @@ class AgentsAndNetworks(mesa.Model):
             }
         )
         self.datacollector.collect(self)
-
+        
+        
     def _create_commuters(self) -> None:
         # date = datetime(2023, 5, self.day+1, self.hour, self.minute, self.second, 0)
         date = self.start_date
         for i in range(self.num_commuters):
             random_home = self.space.get_random_home()
-            random_work = self.space.get_random_work()
+            # random_work = self.space.get_random_work()
             commuter = Commuter(
                 unique_id=uuid.uuid4().int,
                 model=self,
@@ -153,17 +160,18 @@ class AgentsAndNetworks(mesa.Model):
                 crs=self.space.crs,
             )
             commuter.set_home(random_home)
-            commuter.set_work(random_work)
+            # commuter.set_work(random_work)
+            # commuter.set_work(self.common_work)
             commuter.set_next_location(commuter.my_home)
             random_home.visited = True
-            commuter.set_visited_location(random_home,50)
-            commuter.set_visited_location(random_work,50)
+            commuter.set_visited_location(random_home,5)
+            # commuter.set_visited_location(random_work,50)
             commuter.S = 1
             commuter.status = "home"
             self.space.add_commuter(commuter, True)
             self.schedule.add(commuter)
             self.positions.append([commuter.geometry.x,commuter.geometry.y])
-            self.positions_to_write.append([i,commuter.geometry.x,commuter.geometry.y,date])
+            self.positions_to_write.append([i,commuter.geometry.x,commuter.geometry.y,date,commuter.status])
 
     def _load_buildings_from_file(
         self, buildings_file: str, crs: str

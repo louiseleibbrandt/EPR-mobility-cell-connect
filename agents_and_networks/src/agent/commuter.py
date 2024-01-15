@@ -105,7 +105,7 @@ class Commuter(mg.GeoAgent):
 
     def _prepare_to_move(self) -> None:
         if (
-            (self.status == "home" or self.status == "work")
+            (self.status == "home" or self.status == "work" or self.status == "other")
             and (self.model.hour == self.wait_time_h and self.model.minute >= self.wait_time_m)
         ):
             self.origin = self.next_location
@@ -133,12 +133,11 @@ class Commuter(mg.GeoAgent):
             else:
                 self.model.space.move_commuter(self, self.destination.centroid,True)
                 self._set_wait_time()
-                if self.destination == self.my_work:
-                    print("Work!")
-                    self.status = "work"
-                elif self.destination == self.my_home:
+                if self.destination == self.my_home:
                     print("HOME!")
                     self.status = "home"
+                else:
+                    self.status = "other"
                 
 
 
@@ -157,7 +156,7 @@ class Commuter(mg.GeoAgent):
         #     new_point = Point(self.geometry.x + jump_length * math.cos(theta),
         #         self.geometry.y + jump_length * math.sin(theta))
         #     new_location = self.model.space.get_nearest_building(new_point)
-            
+
         #     # Calculate length to new location
         #     length = self.model.walkway.get_length_shortest_path(source=self.origin.entrance_pos, target=new_location.entrance_pos)
             

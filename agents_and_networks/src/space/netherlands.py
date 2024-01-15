@@ -43,7 +43,6 @@ class Netherlands(mg.GeoSpace):
     def get_nearest_building (
         self, float_pos: mesa.space.FloatCoordinate
     ) -> Building:
-        #min_building = min((building.geometry.distance(float_pos) for building in self.works))
         min_building = min(self.works,key=lambda x:x.geometry.distance(float_pos))
         return min_building
 
