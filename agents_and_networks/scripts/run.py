@@ -1,5 +1,3 @@
-import argparse
-
 import mesa
 import mesa_geo as mg
 from src.model.model import AgentsAndNetworks
@@ -19,12 +17,9 @@ if __name__ == "__main__":
     model_params = {
         "data_crs": region_params["data_crs"],
         "start_date": '2023-05-01',
-        "building_source_types": ["apartments","house","allotment_house"],
-        "building_destination_types": ["industrial","school","construction"],
-        # "bounding_box":(4.3739,51.8451,4.5786,51.9623),
         "bounding_box":(4.2009,51.8561,4.5978,52.1149),
-        # "bounding_box":(4.3437,51.9987,4.3775,52.0186),
-
+        "bounding_box_trip":(4.8582,52.3478,4.9423,52.3926),
+        # "bounding_box_festival":(4.8512,52.3933,4.8626,52.3988),
         "num_commuters": mesa.visualization.Slider(
             "Number of Commuters", value=100, min_value=1, max_value=150, step=10
         ),
@@ -38,6 +33,14 @@ if __name__ == "__main__":
         "step_duration": mesa.visualization.NumberInput(
             "Step Duration (seconds)",
             value=60,
+        ),
+        "allow_trips": mesa.visualization.Checkbox(
+            "Allow Trips",
+            value=True,
+        ),
+        "only_same_day_trips": mesa.visualization.Checkbox(
+            "Trips Occur on the Same Day",
+            value=True,
         ),
         "alpha": mesa.visualization.NumberInput(
             "Exponent jump size distribution (truncated power law)",
@@ -64,7 +67,9 @@ if __name__ == "__main__":
             value=2,
         ),
         "buildings_file": f"data/zuid-holland/gis_osm_buildings_a_free_1.zip",
-        "walkway_file": f"data/zuid-holland/gis_osm_roads_free_1.zip",
+        "buildings_file_trip": f"data/noord-holland/gis_osm_buildings_a_free_1.zip",
+        "walkway_file": f"data/zuid-holland/gis_osm_roads_free_1",
+        "walkway_file_trip": f"data/noord-holland/gis_osm_roads_free_1",
     }
 
     map_element = mg.visualization.MapModule(agent_draw, map_height=600, map_width=600)
