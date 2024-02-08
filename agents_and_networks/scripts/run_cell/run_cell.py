@@ -76,8 +76,9 @@ def main(model_params):
                     x_old = x
                     y_old = y
                 agent = re.sub("[^0-9]", "", agents[i])
-                output_writer.writerow([writing_id, f"Agent{agent}", f"{agent}_{phone+1}", 
-                            start + timedelta(seconds = p_time), cellx, celly, degree,"0-0-0"])
+                if (agents_df['status'].iloc[index-1] == "transport"):
+                    output_writer.writerow([writing_id, f"Agent{agent}", f"{agent}_{phone+1}", 
+                                start + timedelta(seconds = p_time), cellx, celly, degree,"0-0-0"])
                 
                 p_time += np.random.default_rng().exponential(scale=3600)
                 writing_id += 1
@@ -89,9 +90,10 @@ if __name__ == '__main__':
     model_params = {
         "start_date": '2023-05-01',
         "end_date": '2023-06-31',
+        # "bounding_box":(4.2009,51.8561,4.9423,52.3926),
         "bounding_box":(4.2009,51.8561,4.5978,52.1149),
         "cell_file": './data/20191202131001.csv',
-        "trajectory_file": '././outputs/trajectories/Returners/Eval/output_trajectory.csv',
-        "output_file": '././outputs/trajectories/Returners/Eval/sampling1/output_cell.csv',
+        "trajectory_file": '././outputs/trajectories/CTRW/Train/output_trajectory.csv',
+        "output_file": '././outputs/trajectories/CTRW/Train/output_cell.csv',
     }
     main(model_params)

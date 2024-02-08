@@ -36,6 +36,7 @@ def main(model_params):
     all_cells = np.array(list(zip(df_cell['lat'],df_cell['lon'])))
 
 
+
     agents = sorted(pd.unique(df_trajectory['owner']))  
     writing_id = 0
     # status_number = {'transport':1, 'home':2, 'work':3, 'other':4}
@@ -96,16 +97,11 @@ def main(model_params):
             agent = re.sub("[^0-9]", "", agents[i])
 
 
-            switch = np.random.random(1)[0]
             if(distances_home[index-1] < 0.01):
                 output_writer.writerow([writing_id, f"Agent{agent}", f"{agent}_{1}", 
                                 start + timedelta(seconds = p_time), cellx, celly, degree,"0-0-0"])
             else:
-                if (switch < 0.5):
-                    output_writer.writerow([writing_id, f"Agent{agent}", f"{agent}_{2}", 
-                            start + timedelta(seconds = p_time), cellx, celly, degree,"0-0-0"])
-                else:
-                    output_writer.writerow([writing_id, f"Agent{agent}", f"{agent}_{1}", 
+                output_writer.writerow([writing_id, f"Agent{agent}", f"{agent}_{2}", 
                             start + timedelta(seconds = p_time), cellx, celly, degree,"0-0-0"])
 
 
@@ -123,7 +119,7 @@ if __name__ == '__main__':
         "end_date": '2023-06-31',
         "bounding_box":(4.2009,51.8561,4.5978,52.1149),
         "cell_file": './data/20191202131001.csv',
-        "trajectory_file": '././outputs/trajectories/Returners/Train/output_trajectory.csv',
-        "output_file": '././outputs/trajectories/Returners/Train/sampling3/output_cell.csv',
+        "trajectory_file": '././outputs/trajectories/Returners/Eval/output_trajectory.csv',
+        "output_file": '././outputs/trajectories/Returners/Eval/sampling3/output_cell.csv',
     }
     main(model_params)

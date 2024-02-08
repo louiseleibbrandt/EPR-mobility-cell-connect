@@ -13,6 +13,7 @@ import geopandas as gpd
 from shapely.geometry import LineString, Point
 from src.agent.building import Building
 from src.agent.geo_agents import Path
+from scripts.utils.timer import Timer
 from src.space.utils import UnitTransformer, redistribute_vertices, power_law_exponential_cutoff
 
 
@@ -43,15 +44,19 @@ class Commuter(mg.GeoAgent):
     status: str  # work, home, or transport
     allow_trips: bool
     only_same_day_trips: bool
-    on_trip: bool
-    SPEED: float
-    trip_speed: float
+    on_trip: bool 
+    between: bool # moving between with increased speed
+    SPEED_WALK: float
+    SPEED_DRIVE: float
     ALPHA: float # jump
     TAU_jump: float # max jump
+    TAU_jump_min: float
     BETA: float # time
     TAU_time: float # max time
+    TAU_time_min: float
     RHO: float # constant in exploration probability
     GAMMA: float # exponent in exploration probability
+    timer: Timer
 
 
 
@@ -64,8 +69,9 @@ class Commuter(mg.GeoAgent):
         self.visited_locations_trip = []
         self.frequencies_trip = []
         self.on_trip = False
+        self.between = False
         self._set_wait_time()
-        self.trip_speed = self.SPEED
+        self.timer = Timer()
         
 
     def __repr__(self) -> str:
@@ -77,7 +83,7 @@ class Commuter(mg.GeoAgent):
         # Total time passed in minutes
         time_passed_m = (self.model.hour * 60) + self.model.minute
         # Get waiting time 
-        wait_time_m = (power_law_exponential_cutoff(1, self.TAU_time, self.BETA, self.TAU_time))*60
+        wait_time_m = (power_law_exponential_cutoff(self.TAU_time_min, self.TAU_time, self.BETA, self.TAU_time))*60
         # Set correct new time
         total_time_m = wait_time_m + time_passed_m
         self.wait_time_h = math.floor(total_time_m/60)
@@ -105,61 +111,59 @@ class Commuter(mg.GeoAgent):
 
     def step(self) -> None:
         if (self.allow_trips and self.only_same_day_trips):
-            if (self.model.day % 10 == 0 and self.model.hour == 0 and self.model.minute == 0):
+            if (self.model.day % 10 == 7 and self.model.hour == 6 and self.model.minute == 30 and self.model.second == 0):
                 print("on trip1")
                 self.on_trip = True
-                self.trip_speed = 900
+                self.between = True
 
         if (self.allow_trips and not self.only_same_day_trips):
-            if (self.model.hour == 1 and self.model.minute == 0 and self.model.second == 0 and random.uniform(0, 1) < 1/10):
+            if (random.uniform(0, 1) < 1/10 and self.model.hour == 6 and self.model.minute == 30 and self.model.second == 0):
                 print("on trip2")
                 self.on_trip = True
-                self.trip_speed = 900
+                self.between = True
 
-        if (self.on_trip and self.model.hour == 23 and self.model.minute == 59 and self.model.second == 0):
+        if (self.on_trip and self.model.hour == 16 and self.model.minute == 0 and self.model.second == 0):
             self.on_trip = False
-            self.trip_speed = 900
+            self.between = True
  
         self._prepare_to_move()
         self._move()
         
-
-
 
     def _prepare_to_move(self) -> None:
         if (
             (self.status == "home" or self.status == "work" or self.status == "other")
             and (self.model.hour == self.wait_time_h and self.model.minute >= self.wait_time_m)
         ): 
-
-
             self.origin = self.next_location
 
-            
-
-            if (self.on_trip == True):
-                print("S = ",len(self.visited_locations_trip))            
-                if (len(self.visited_locations_trip) == 0):
-                    p = 1
-                else:
+            if (self.on_trip == True and len(self.visited_locations_trip) == 0): 
+                first_trip_location = self.model.space.get_random_building_trip()
+                self.set_next_location(first_trip_location)
+                
+                self.visited_locations_trip.append(first_trip_location)
+                self.frequencies_trip.append(1)
+            else:
+                if (self.between):
+                    p = -1
+                elif (self.on_trip == True):
                     p = self.RHO*(math.pow(len(self.visited_locations_trip),(-1*self.GAMMA)))
-            else:
-                p = self.RHO*(math.pow(len(self.visited_locations),(-1*self.GAMMA)))
+                else:
+                    p = self.RHO*(math.pow(len(self.visited_locations),(-1*self.GAMMA)))
 
-            if random.uniform(0, 1) < p:
-                self._explore(self.on_trip)
-            else:
-                self._return(self.on_trip)
+                if random.uniform(0, 1) < p:
+                    self._explore(self.on_trip)
+                else:
+                     self._return(self.on_trip)
+     
                 
             self.destination = self.model.space.get_building_by_id(
                 self.next_location.unique_id
             )
+
             self._path_select()
             self.status = "transport"
-            
-
-
-            
+                     
 
     def _move(self) -> None:
         if self.status == "transport":
@@ -181,7 +185,7 @@ class Commuter(mg.GeoAgent):
         visited_locations = self.visited_locations_trip if trip else self.visited_locations 
         frequencies = self.frequencies_trip if trip else self.frequencies
 
-        jump_length = (power_law_exponential_cutoff(1, self.TAU_jump, self.ALPHA, self.TAU_jump)*100)
+        jump_length = (power_law_exponential_cutoff(self.TAU_jump_min, self.TAU_jump, self.ALPHA, self.TAU_jump)*1000)
         theta = random.uniform(0, 2*math.pi)
         new_point = Point(self.geometry.x + jump_length * math.cos(theta),
         self.geometry.y + jump_length * math.sin(theta))
@@ -197,15 +201,16 @@ class Commuter(mg.GeoAgent):
 
     def _return(self, trip) -> None:
         visited_locations = self.visited_locations_trip if trip else self.visited_locations 
-        if (len(visited_locations) <= 1):
-            print ("error!!, wants to return but only one previously visited location")
-
         frequencies = self.frequencies_trip if trip else self.frequencies
-
-        while (new_location := random.sample(population=visited_locations,k=1,counts=frequencies))[0] == self.next_location:
-             continue
-        index = visited_locations.index(new_location[0])
-        frequencies[index] += 1
+        
+        if (len(visited_locations) <= 1):
+            new_location = random.sample(population=visited_locations,k=1,counts=frequencies)
+        else:
+            while (new_location := random.sample(population=visited_locations,k=1,counts=frequencies))[0] == self.next_location:
+                continue
+            index = visited_locations.index(new_location[0])
+            frequencies[index] += 1
+        
         self.set_next_location(new_location[0])
 
 
@@ -228,7 +233,7 @@ class Commuter(mg.GeoAgent):
                 target=self.destination.entrance_pos,
                 path=self.my_path,
             )
-            
+        
         self._redistribute_path_vertices()
 
 
@@ -242,13 +247,17 @@ class Commuter(mg.GeoAgent):
             # from degree unit to meter
             path_in_meters = unit_transformer.degree2meter(original_path)
 
-            if (self.on_trip == True):
-                print(self.trip_speed)
+            
+            if (self.between):
+                redistributed_path_in_meters = redistribute_vertices(
+                    path_in_meters, self.SPEED_DRIVE
+                )
+                self.between = False
+            else:
+                redistributed_path_in_meters = redistribute_vertices(
+                    path_in_meters, self.SPEED_WALK
+                )
 
-            redistributed_path_in_meters = redistribute_vertices(
-                path_in_meters, self.trip_speed
-            )
-            self.trip_speed = 84
             # meter back to degree
             redistributed_path_in_degree = unit_transformer.meter2degree(
                 redistributed_path_in_meters

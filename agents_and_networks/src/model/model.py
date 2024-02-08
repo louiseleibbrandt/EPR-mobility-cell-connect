@@ -9,6 +9,8 @@ from shapely.geometry import Point
 import csv
 
 from datetime import datetime, timedelta
+from scripts.utils.timer import Timer
+
 
 from src.agent.building import Building
 from src.agent.commuter import Commuter
@@ -53,8 +55,10 @@ class AgentsAndNetworks(mesa.Model):
     only_same_day_trips: bool
     alpha: float
     tau_jump: float    # in meters
+    tau_jump_min: float
     beta: float
     tau_time: float    # in hours
+    tau_time_min: float
     rho: float
     gamma: float
     day: int
@@ -66,6 +70,7 @@ class AgentsAndNetworks(mesa.Model):
     writing_id_trajectory:int
     common_work: Building
     datacollector: mesa.DataCollector
+    timer: Timer
     
 
     def __init__(
@@ -81,13 +86,16 @@ class AgentsAndNetworks(mesa.Model):
         only_same_day_trips,
         alpha,
         tau_jump,   # in meters
+        tau_jump_min,
         beta,
         tau_time,   # in hours
+        tau_time_min,
         rho,
         gamma,
         bounding_box,
         bounding_box_trip,
-        commuter_speed,
+        commuter_speed_walk,
+        commuter_speed_drive,
         model_crs="epsg:3857",
         start_date="2023-05-01",
     ) -> None:
@@ -105,22 +113,30 @@ class AgentsAndNetworks(mesa.Model):
         self.only_same_day_trips = only_same_day_trips
         self.positions_to_write = []
         self.positions = []
+        self.timer = Timer()
 
-        Commuter.SPEED = commuter_speed * step_duration  # meters per tick 
-        print("speed: ", Commuter.SPEED)
+        Commuter.SPEED_WALK = commuter_speed_walk * step_duration  # meters per tick 
+        Commuter.SPEED_DRIVE = commuter_speed_drive * step_duration  # meters per tick 
         Commuter.ALPHA = alpha
         Commuter.TAU_jump = tau_jump
+        Commuter.TAU_jump_min = tau_jump_min
         Commuter.BETA = beta
         Commuter.TAU_time = tau_time
+        Commuter.TAU_time_min = tau_time_min
         Commuter.RHO = rho
         Commuter.GAMMA = gamma
 
         Commuter.allow_trips = allow_trips
         Commuter.only_same_day_trips = only_same_day_trips
 
-
+        self.timer.start()
         self._load_buildings_from_file(buildings_file, buildings_file_trip, crs=model_crs)
+        print("read in buildings file")
+        self.timer.stop()
+        self.timer.start()
         self._load_road_vertices_from_file(walkway_file, walkway_file_trip, crs=model_crs)
+        print("read in road file")
+        self.timer.stop()
         self._set_building_entrance()
 
         self.day = 0
@@ -174,12 +190,12 @@ class AgentsAndNetworks(mesa.Model):
     ) -> None:
         # read in buildings from normal bounding box
         buildings_df = gpd.read_file(buildings_file, bbox=(self.bounding_box))
-        buildings_df = buildings_df.sample(frac =  0.05)
+        buildings_df = buildings_df.sample(frac =  0.01)
         print("number buildings: ",len(buildings_df))
         # if allow trips, read in buildings from bounding box corresponding to trip
         if (self.allow_trips == True):
             buildings_df_trip = gpd.read_file(buildings_file_trip, bbox=(self.bounding_box_trip))
-            buildings_df_trip = buildings_df_trip.sample(frac =  0.05)
+            buildings_df_trip = buildings_df_trip.sample(frac =  0.01)
             print("number buildings trip: ",len(buildings_df_trip))
             buildings_type = [0]*len(buildings_df) + [1]*len(buildings_df_trip)
             buildings_df = pd.concat([buildings_df,buildings_df_trip])
