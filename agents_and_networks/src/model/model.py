@@ -178,7 +178,7 @@ class AgentsAndNetworks(mesa.Model):
             commuter.set_home(random_home)
             commuter.set_next_location(commuter.my_home)
             random_home.visited = True
-            commuter.set_visited_location(random_home,5)
+            commuter.set_visited_location(random_home,25)
             commuter.status = "home"
             self.space.add_commuter(commuter, True)
             self.schedule.add(commuter)

@@ -50,7 +50,7 @@ if __name__ == "__main__":
         ),
         "tau_jump_min": mesa.visualization.NumberInput(
             "Min jump (km) jump size distribution (truncated power law)",
-            value=1.0,
+            value=1,
         ),
         "tau_jump": mesa.visualization.NumberInput(
             "Max jump (km) jump size distribution (truncated power law)",
@@ -62,11 +62,11 @@ if __name__ == "__main__":
         ),
         "tau_time_min": mesa.visualization.NumberInput(
             "Min time (hour) waiting time distribution (truncated power law)",
-            value=2/60,
+            value=20/60,
         ),
         "tau_time": mesa.visualization.NumberInput(
             "Max time (hour) waiting time distribution (truncated power law)",
-            value=1.7,
+            value=17,
         ),
         "rho": mesa.visualization.NumberInput(
             "Constant in probability of exploration",
@@ -74,7 +74,7 @@ if __name__ == "__main__":
         ),
         "gamma": mesa.visualization.NumberInput(
             "Exponent in probability of exploration",
-            value=2,
+            value=0,
         ),
         "buildings_file": f"data/zuid-holland/gis_osm_buildings_a_free_1.zip",
         "buildings_file_trip": f"data/noord-holland/gis_osm_buildings_a_free_1.zip",

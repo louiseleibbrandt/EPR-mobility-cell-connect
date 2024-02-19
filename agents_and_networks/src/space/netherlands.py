@@ -44,14 +44,12 @@ class Netherlands(mg.GeoSpace):
         return self._buildings[unique_id]
     
     def get_nearest_building (
-        self, float_pos: mesa.space.FloatCoordinate, visited_locations: list,trip: bool
+        self, float_pos: mesa.space.FloatCoordinate, trip: bool
     ) -> Building:
         if (trip == True):
-            search = [x for x in self.buildings_trip if x not in visited_locations]
-            min_building = min(search,key=lambda x:x.geometry.distance(float_pos))
+            min_building = min(self.buildings_trip,key=lambda x:x.geometry.distance(float_pos))
         else:
-            search = [x for x in self.buildings if x not in visited_locations]
-            min_building = min(search,key=lambda x:x.geometry.distance(float_pos))
+            min_building = min(self.buildings,key=lambda x:x.geometry.distance(float_pos))
         return min_building
 
 

@@ -110,21 +110,21 @@ class Commuter(mg.GeoAgent):
         self.frequencies.append(frequency)
 
     def step(self) -> None:
-        if (self.allow_trips and self.only_same_day_trips):
-            if (self.model.day % 10 == 7 and self.model.hour == 6 and self.model.minute == 30 and self.model.second == 0):
-                print("on trip1")
-                self.on_trip = True
-                self.between = True
+        # if (self.allow_trips and self.only_same_day_trips):
+        #     if (self.model.day % 10 == 7 and self.model.hour == 6 and self.model.minute == 30 and self.model.second == 0):
+        #         print("on trip1")
+        #         self.on_trip = True
+        #         self.between = True
 
-        if (self.allow_trips and not self.only_same_day_trips):
-            if (random.uniform(0, 1) < 1/10 and self.model.hour == 6 and self.model.minute == 30 and self.model.second == 0):
-                print("on trip2")
-                self.on_trip = True
-                self.between = True
+        # if (self.allow_trips and not self.only_same_day_trips):
+        #     if (random.uniform(0, 1) < 1/10 and self.model.hour == 6 and self.model.minute == 30 and self.model.second == 0):
+        #         print("on trip2")
+        #         self.on_trip = True
+        #         self.between = True
 
-        if (self.on_trip and self.model.hour == 16 and self.model.minute == 0 and self.model.second == 0):
-            self.on_trip = False
-            self.between = True
+        # if (self.on_trip and self.model.hour == 16 and self.model.minute == 0 and self.model.second == 0):
+        #     self.on_trip = False
+        #     self.between = True
  
         self._prepare_to_move()
         self._move()
@@ -137,24 +137,24 @@ class Commuter(mg.GeoAgent):
         ): 
             self.origin = self.next_location
 
-            if (self.on_trip == True and len(self.visited_locations_trip) == 0): 
-                first_trip_location = self.model.space.get_random_building_trip()
-                self.set_next_location(first_trip_location)
+            # if (self.on_trip == True and len(self.visited_locations_trip) == 0): 
+            #     first_trip_location = self.model.space.get_random_building_trip()
+            #     self.set_next_location(first_trip_location)
                 
-                self.visited_locations_trip.append(first_trip_location)
-                self.frequencies_trip.append(1)
+            #     self.visited_locations_trip.append(first_trip_location)
+            #     self.frequencies_trip.append(1)
+            # else:
+            #     if (self.between):
+            #         p = -1
+            #     elif (self.on_trip == True):
+            #         p = self.RHO*(math.pow(len(self.visited_locations_trip),(-1*self.GAMMA)))
+            #     else:
+            #         p = self.RHO*(math.pow(len(self.visited_locations),(-1*self.GAMMA)))
+            p = self.RHO*(math.pow(len(self.visited_locations),(-1*self.GAMMA)))
+            if random.uniform(0, 1) < p:
+                self._explore(self.on_trip)
             else:
-                if (self.between):
-                    p = -1
-                elif (self.on_trip == True):
-                    p = self.RHO*(math.pow(len(self.visited_locations_trip),(-1*self.GAMMA)))
-                else:
-                    p = self.RHO*(math.pow(len(self.visited_locations),(-1*self.GAMMA)))
-
-                if random.uniform(0, 1) < p:
-                    self._explore(self.on_trip)
-                else:
-                     self._return(self.on_trip)
+                self._return(self.on_trip)
      
                 
             self.destination = self.model.space.get_building_by_id(
@@ -190,7 +190,7 @@ class Commuter(mg.GeoAgent):
         new_point = Point(self.geometry.x + jump_length * math.cos(theta),
         self.geometry.y + jump_length * math.sin(theta))
         
-        min_location = self.model.space.get_nearest_building(new_point,visited_locations, trip)
+        min_location = self.model.space.get_nearest_building(new_point, trip)
 
         # Set new location as building closest to this point
         min_location.visited = True
