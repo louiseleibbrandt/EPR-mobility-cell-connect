@@ -11,17 +11,15 @@ from src.visualization.server import (
 
 if __name__ == "__main__":
     region_params = {
-        "data_crs": "epsg:4326", "commuter_speed": 14
+        "data_crs": "epsg:4326", "commuter_speed": 1.4
     }
 
     model_params = {
         "data_crs": region_params["data_crs"],
         "start_date": '2023-05-01',
         "bounding_box":(4.2009,51.8561,4.5978,52.1149),
-        # "bounding_box":(4.2490,52.0035,4.4138,52.0934),
         "bounding_box_trip":(4.8582,52.3478,4.9423,52.3926),
-        "commuter_speed_drive": 14,
-        # "bounding_box_festival":(4.8512,52.3933,4.8626,52.3988),
+        "commuter_speed_drive": 1.4,
         "num_commuters": mesa.visualization.Slider(
             "Number of Commuters", value=100, min_value=1, max_value=150, step=10
         ),
@@ -50,7 +48,7 @@ if __name__ == "__main__":
         ),
         "tau_jump_min": mesa.visualization.NumberInput(
             "Min jump (km) jump size distribution (truncated power law)",
-            value=1,
+            value=1.0,
         ),
         "tau_jump": mesa.visualization.NumberInput(
             "Max jump (km) jump size distribution (truncated power law)",
@@ -74,7 +72,7 @@ if __name__ == "__main__":
         ),
         "gamma": mesa.visualization.NumberInput(
             "Exponent in probability of exploration",
-            value=0,
+            value=2,
         ),
         "buildings_file": f"data/zuid-holland/gis_osm_buildings_a_free_1.zip",
         "buildings_file_trip": f"data/noord-holland/gis_osm_buildings_a_free_1.zip",
@@ -85,6 +83,7 @@ if __name__ == "__main__":
     map_element = mg.visualization.MapModule(agent_draw, map_height=600, map_width=600)
     server = mesa.visualization.ModularServer(
         AgentsAndNetworks,
+        # use following if you want map functionality
         # [map_element, clock_element],
         [clock_element],
         "Agents and Networks",

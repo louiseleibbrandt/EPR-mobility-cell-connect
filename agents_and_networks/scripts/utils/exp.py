@@ -3,36 +3,47 @@ import pandas as pd
 import re
 import matplotlib.pyplot as plt
 import numpy as np
+import geopandas as gpd
+from src.space.utils import power_law_exponential_cutoff
+import scipy.stats as stats
+
 
 start_date = '2023-06-01'
-end_date = '2023-06-03'
+end_date = '2023-06-31'
 
-df_cell = pd.read_csv('././outputs/trajectories/Returners/Eval/sampling2/output_cell.csv')
+df_cell = pd.read_csv('././outputs/trajectories/Explorers/Eval/output_trajectory.csv')
 
 mask = (df_cell['timestamp'] >= start_date) & (df_cell['timestamp'] <= end_date)
 df_cell = df_cell.loc[mask]
 
-output_file = open('././outputs/trajectories/Returners/Eval/sampling2/output_cell_smallest.csv', 'w')
+df_cell.to_csv('././outputs/trajectories/Explorers/Eval/output_trajectory_small.csv')
+# y_time1 = 0
+# y1 = []
 
+# y_time2 = 0
+# y2 = []
+# for i in range(30):
+#     y_time1 += np.random.default_rng().exponential(scale=1)
+#     y1.append(y_time1)
+#     y_time2 += np.random.default_rng().exponential(scale=1)
+#     y2.append(y_time2)
 
-df_cell.to_csv(output_file, mode='a', index=False, header=True)
-# x = []
-
-# for i in range (0,500):
-#     x.append(np.random.default_rng().exponential(scale=1/3600))
-# plt.hist(x)
+# x1 = [1]*30
+# x2 = [2]*30
+# plt.scatter(y1,x1, c='blue') 
+# plt.scatter(y2,x2, c='red')
 # plt.show()
 
-# start_date = '2023-07-01'
-# end_date = '2023-07-31'
-
-# df_trajectory200 = pd.read_csv('./outputs/trajectories/Final_Train/Returner/output_trajectory200.csv')
-# df_trajectory100 = pd.read_csv('./outputs/trajectories/Final_Train/Returner/output_trajectory100.csv')
-# output_file = open('./outputs/trajectories/Final_Train/Returner/output_trajectory300.csv', 'w')
-
-# df_trajectory100['owner'] =  df_trajectory100['owner'].apply(lambda x: f'Agent{int(re.sub("[^0-9]", "", x))+200}')
-# df_trajectory100['id'] =  df_trajectory100['id'].apply(lambda x: x+len(df_trajectory200))
-# df_trajectory300 = pd.concat([df_trajectory200,df_trajectory100])
+# times = []
+# distances = []
 
 
-# df_trajectory300.to_csv(output_file, mode='a', index=False, header=True)
+# for i in range(1000):
+#     times.append((power_law_exponential_cutoff(2/60, 1.7, 0.8, 1.7))*60)
+#     # distances.append((power_law_exponential_cutoff(1, 100, 0.55, 100)))
+#     # times.append(power_law_exponential_cutoff(1/60, 1, 1, 1))*60
+
+
+
+# plt.hist(times) 
+# plt.show()

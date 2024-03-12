@@ -4,20 +4,21 @@ import pandas as pd
 import folium
 import branca
 
-data_path = Path('././outputs/trajectories/Location_Eval/Time_Sampling2/Random_Work/output_cell.csv')
+data_path = Path('././outputs/trajectories2.0/ReturnersSlow/Eval/output_trajectory.csv')
 start_date = '2023-06-01'
-end_date = '2023-06-30'
+end_date = '2023-06-02'
+
 
 df = pd.read_csv(data_path)
 
 mask = (df['timestamp'] >= start_date) & (df['timestamp'] <= end_date)
 df = df.loc[mask]
-mask = (df['owner'] == 'Agent1')
+mask = (df['owner'] == 'Agent3') 
 df = df.loc[mask]
+# df = df[0:50]
 
-
-mask = (df['device'] == '8_2')
-df = df.loc[mask]
+# mask = (df['device'] == '2_2')
+# df = df.loc[mask]
 
 for date_col in ['timestamp']:
     df[date_col] = pd.to_datetime(df[date_col])
@@ -34,17 +35,18 @@ points = []
 for _, report in df.iterrows():
     report_html = report.to_frame().to_html(header=False)
     points.append(tuple([report.latitude, report.longitude]))
-    folium.Circle(
-        location=(report.latitude, report.longitude),
-        fill=True,
-        fill_opacity=0.1,
-        popup=folium.Popup(html=report_html,
-                           max_width=600),
-        tooltip=folium.Tooltip(report_html),
-    ).add_to(m)
+    # folium.Circle(
+    #     location=(report.latitude, report.longitude),
+    #     fill=True,
+    #     fill_opacity=1,
+    #     popup=folium.Popup(html=report_html,
+    #                        max_width=600),
+    #     tooltip=folium.Tooltip(report_html),
+    #     color = "red",
+    # ).add_to(m)
     
 
-folium.PolyLine(points, color="blue", weight=2.5, opacity=0.1).add_to(m)
+folium.PolyLine(points, color="red", weight=2.5, opacity=1).add_to(m)
 
 southwest = df[['latitude', 'longitude']].min().values.tolist()
 northeast = df[['latitude', 'longitude']].max().values.tolist()

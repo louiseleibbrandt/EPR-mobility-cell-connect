@@ -5,12 +5,10 @@ import re
 
 import csv
 from pyproj import Transformer
-from scipy.stats import poisson
 from datetime import datetime, timedelta
 from telcell.data.models import Measurement, Point
 from random import choices
 from telcell.data.models import RDPoint
-from scripts.utils.timer import Timer
 
 """
 Script to obtain the cell tower samplings from a pre-existing coverage model
@@ -76,7 +74,6 @@ def main(model_params):
     all_grids = []
     all_degree = []
     distances_home = []
-    timer = Timer()
 
     # Read in grid with probabilites for each cell in our cell towere dataframe
     for i in range(len(all_cells)):
@@ -94,7 +91,7 @@ def main(model_params):
         all_degree.append(df_cell['Hoofdstraalrichting'].iloc[i])
 
     # loop over agents and obtain trajectory per agent, store max observed time
-    for i in range(30):
+    for i in range(len(agents)):
         agents_df = df_trajectory[df_trajectory['owner'].isin([agents[i]])] 
         max = agents_df['seconds'].iloc[-1]
         
@@ -143,7 +140,7 @@ def main(model_params):
                         phone = 0
                     
                 elif (model_params["sampling_method"] == 3):
-                    if(distances_home[index-1] > 0.02):
+                    if(distances_home[index-1] > 0.05):
                         phone = 1
                     else:
                         phone = 0
@@ -160,13 +157,13 @@ def main(model_params):
 
 if __name__ == '__main__':
     model_params = {
-        "start_date": '2023-05-10',
-        "end_date": '2023-05-21',
+        "start_date": '2023-05-01',
+        "end_date": '2023-05-31',
         # "bounding_box":(4.2009,51.8561,4.9423,52.3926),
         "bounding_box":(4.2009,51.8561,4.5978,52.1149),
         "cell_file": './data/20191202131001.csv',
-        "trajectory_file": '././outputs/trajectories2.0/Returners/Eval/output_trajectory.csv',
-        "output_file": '././outputs/trajectories2.0/Returners/Eval/output_cell_small.csv',
+        "trajectory_file": '././outputs/trajectories/output_trajectory.csv',
+        "output_file": '././outputs/trajectories/output_cell.csv',
         "sampling_method": 1
     }
     main(model_params)

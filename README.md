@@ -27,10 +27,21 @@ First install the dependencies:
 python3 -m pip install -r requirements.txt
 ```
 
-Then run the model:
+Then run the trajectory model:
 
 ```bash
-python3 scripts/run.py --region zuid-holland
+python3 scripts/run.py 
+```
+
+Then run the cell-tower sampling model (make sure you adjust the input parameters for desired sampling):
+With coverage model:
+```bash
+python3 scripts/run_cell/coverage.py 
+```
+
+With simple sampling (closest cell tower facing agent):
+```bash
+python3 scripts/run_cell/simple.py 
 ```
 
 Change `zuid-holland` to ... for a different region.

@@ -9,7 +9,6 @@ from shapely.geometry import Point
 import csv
 
 from datetime import datetime, timedelta
-from scripts.utils.timer import Timer
 
 
 from src.agent.building import Building
@@ -70,8 +69,7 @@ class AgentsAndNetworks(mesa.Model):
     writing_id_trajectory:int
     common_work: Building
     datacollector: mesa.DataCollector
-    timer: Timer
-    
+
 
     def __init__(
         self,
@@ -113,7 +111,6 @@ class AgentsAndNetworks(mesa.Model):
         self.only_same_day_trips = only_same_day_trips
         self.positions_to_write = []
         self.positions = []
-        self.timer = Timer()
 
         Commuter.SPEED_WALK = commuter_speed_walk * step_duration  # meters per tick 
         Commuter.SPEED_DRIVE = commuter_speed_drive * step_duration  # meters per tick 
@@ -129,14 +126,10 @@ class AgentsAndNetworks(mesa.Model):
         Commuter.allow_trips = allow_trips
         Commuter.only_same_day_trips = only_same_day_trips
 
-        self.timer.start()
         self._load_buildings_from_file(buildings_file, buildings_file_trip, crs=model_crs)
         print("read in buildings file")
-        self.timer.stop()
-        self.timer.start()
         self._load_road_vertices_from_file(walkway_file, walkway_file_trip, crs=model_crs)
         print("read in road file")
-        self.timer.stop()
         self._set_building_entrance()
 
         self.day = 0
@@ -190,6 +183,7 @@ class AgentsAndNetworks(mesa.Model):
     ) -> None:
         # read in buildings from normal bounding box
         buildings_df = gpd.read_file(buildings_file, bbox=(self.bounding_box))
+        # sample buildings for speedup
         buildings_df = buildings_df.sample(frac =  0.01)
         print("number buildings: ",len(buildings_df))
         # if allow trips, read in buildings from bounding box corresponding to trip

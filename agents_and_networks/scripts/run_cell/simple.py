@@ -90,10 +90,9 @@ if __name__ == '__main__':
     model_params = {
         "start_date": '2023-05-01',
         "end_date": '2023-06-31',
-        # "bounding_box":(4.2009,51.8561,4.9423,52.3926),
         "bounding_box":(4.2009,51.8561,4.5978,52.1149),
         "cell_file": './data/20191202131001.csv',
-        "trajectory_file": '././outputs/trajectories/CTRW/Train/output_trajectory.csv',
-        "output_file": '././outputs/trajectories/CTRW/Train/output_cell.csv',
+        "trajectory_file": '././outputs/trajectories/output_trajectory.csv',
+        "output_file": '././outputs/trajectories/output_cell.csv',
     }
     main(model_params)
