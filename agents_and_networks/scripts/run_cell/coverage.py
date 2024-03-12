@@ -6,9 +6,9 @@ import re
 import csv
 from pyproj import Transformer
 from datetime import datetime, timedelta
-from telcell.data.models import Measurement, Point
+import telcell
 from random import choices
-from telcell.data.models import RDPoint
+
 
 """
 Script to obtain the cell tower samplings from a pre-existing coverage model
@@ -77,8 +77,8 @@ def main(model_params):
 
     # Read in grid with probabilites for each cell in our cell towere dataframe
     for i in range(len(all_cells)):
-        grid = model.probabilities(Measurement(
-                        coords=Point(lat=float(all_cells[i][0]),
+        grid = model.probabilities(telcell.data.model.Measurement(
+                        coords=telcell.data.model.Point(lat=float(all_cells[i][0]),
                                     lon=float(all_cells[i][1])),
                         timestamp=datetime.now(),
                         extra={'mnc': '16',
@@ -121,7 +121,7 @@ def main(model_params):
                     index += 1
                 x = agents_df['cellinfo.wgs84.lat'].iloc[index-1]
                 y = agents_df['cellinfo.wgs84.lon'].iloc[index-1]
-                rd = Point(lat = x,lon = y).convert_to_rd()
+                rd = data.model.Point(lat = x,lon = y).convert_to_rd()
                 
                 if (x_old != round(rd.x/100)*100 or y_old != round(rd.y/100)*100):
                     probabilities = [grid.get_value_for_coord(RDPoint(x=rd.x,y = rd.y)) for grid in all_grids]

@@ -2,17 +2,12 @@ from __future__ import annotations
 import math
 
 import random
-import sys
-import uuid
 
 import mesa
 import mesa_geo as mg
-import numpy as np
 import pyproj
-import geopandas as gpd
 from shapely.geometry import LineString, Point
 from src.agent.building import Building
-from src.agent.geo_agents import Path
 from src.space.utils import UnitTransformer, redistribute_vertices, power_law_exponential_cutoff
 
 
