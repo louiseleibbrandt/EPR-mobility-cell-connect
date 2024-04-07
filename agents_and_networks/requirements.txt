@@ -20,3 +20,4 @@ momepy
 networkx
 black[jupyter]
 telcell
+tensorflow~=2.13.0

@@ -44,8 +44,6 @@ With simple sampling (closest cell tower facing agent):
 python3 scripts/run_cell/simple.py 
 ```
 
-Change `zuid-holland` to ... for a different region.
-
 Open your browser to [http://127.0.0.1:8521/](http://127.0.0.1:8521/) and press `Start`.
 
 ## License

@@ -11,7 +11,6 @@ from src.agent.commuter import Commuter
 
 class Netherlands(mg.GeoSpace):
     buildings: Tuple[Building]
-    buildings_trip: Tuple[Building]
     home_counter: DefaultDict[mesa.space.FloatCoordinate, int]
     commuters: list[Commuter]
     number_commuters: int
@@ -22,35 +21,24 @@ class Netherlands(mg.GeoSpace):
     def __init__(self, crs: str) -> None:
         super().__init__(crs=crs)
         self.buildings = ()
-        self.buildings_trip = ()
         self.home_counter = defaultdict(int)
         self._buildings = {}
         self._commuters_pos_map = defaultdict(set)
         self._commuter_id_map = {}
         self.commuters = []
 
-    # def get_random_home(self) -> Building:
-    #     return random.choice(self.homes)
-
-    # def get_random_work(self) -> Building:
-    #     return random.choice(self.works)
     def get_random_building(self) -> Building:
         return random.choice(self.buildings)
 
-    def get_random_building_trip(self) -> Building:
-        return random.choice(self.buildings_trip)
 
     def get_building_by_id(self, unique_id: int) -> Building:
         return self._buildings[unique_id]
     
     def get_nearest_building (
-        self, float_pos: mesa.space.FloatCoordinate, visited_locations: list, trip: bool
+        self, float_pos: mesa.space.FloatCoordinate, visited_locations: list,
     ) -> Building:
-        if (trip == True):
-            min_building = min(self.buildings_trip,key=lambda x:x.geometry.distance(float_pos))
-        else:
-            search = [x for x in self.buildings if x not in visited_locations]
-            min_building = min(search,key=lambda x:x.geometry.distance(float_pos))
+        search = [x for x in self.buildings if x not in visited_locations]
+        min_building = min(search,key=lambda x:x.geometry.distance(float_pos))
         return min_building
 
 
@@ -58,18 +46,16 @@ class Netherlands(mg.GeoSpace):
     # def add_buildings(self, agents, types) -> None:
     def add_buildings(self, agents, types) -> None:
         # super().add_agents(agents)
-        buildings, buildings_trip = [], []
+        buildings = []
         for (agent,type) in zip(agents,types):
             if isinstance(agent, Building):
                 self._buildings[agent.unique_id] = agent
                 if  type == 0:
                     agent.function = 0
-                    buildings.append(agent)
                 elif type == 1:
                     agent.function = 1
-                    buildings_trip.append(agent)
+            buildings.append(agent)
         self.buildings = self.buildings + tuple(buildings)
-        self.buildings_trip = self.buildings_trip + tuple(buildings_trip)
 
     def get_commuters_by_pos(
         self, float_pos: mesa.space.FloatCoordinate

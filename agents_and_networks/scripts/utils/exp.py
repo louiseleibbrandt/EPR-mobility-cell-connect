@@ -1,22 +1,53 @@
 
 import pandas as pd
-import re
-import matplotlib.pyplot as plt
 import numpy as np
-import geopandas as gpd
 from src.space.utils import power_law_exponential_cutoff
-import scipy.stats as stats
+
+import matplotlib.pyplot as plt
+import pandas as pd
+import geopandas as gpd
+import re
+
+# Start and End date for trajectory analysis
+
+start_date = '2023-05-01'
+end_date = '2023-06-10'
 
 
-start_date = '2023-06-01'
-end_date = '2023-06-31'
 
-df_cell = pd.read_csv('././outputs/trajectories/Explorers/Eval/output_trajectory.csv')
+df_trajectory = pd.read_csv('././outputs/trajectories2.0/MoversSlow/Eval/output_trajectory.csv')
+mask = (df_trajectory['timestamp'] >= start_date) & (df_trajectory['timestamp'] <= end_date)
+df_trajectory = df_trajectory.loc[mask]
 
-mask = (df_cell['timestamp'] >= start_date) & (df_cell['timestamp'] <= end_date)
-df_cell = df_cell.loc[mask]
+agents = sorted(pd.unique(df_trajectory['owner']))
+print(agents)
+unique = []
+for i in range(len(agents)):
+    agents_trajectory = df_trajectory[df_trajectory['owner'].isin([agents[i]])]
+    unique_locations = agents_trajectory[agents_trajectory['status'].isin(["other","home"])]
+    
+    unique.append(len(unique_locations[['cellinfo.wgs84.lon', 'cellinfo.wgs84.lat']].drop_duplicates()))
 
-df_cell.to_csv('././outputs/trajectories/Explorers/Eval/output_trajectory_small.csv')
+print(unique)
+print(np.average(unique))
+
+
+
+
+    
+
+
+
+
+# start_date = '2023-06-01'
+# end_date = '2023-06-31'
+
+# df_cell = pd.read_csv('././outputs/trajectories2.0/Returners/Eval/output_trajectory.csv')
+
+# mask = (df_cell['timestamp'] >= start_date) & (df_cell['timestamp'] <= end_date)
+# df_cell = df_cell.loc[mask]
+
+# df_cell.to_csv('././outputs/trajectories/Explorers/Eval/output_trajectory_small.csv')
 # y_time1 = 0
 # y1 = []
 

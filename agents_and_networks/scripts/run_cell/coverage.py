@@ -33,7 +33,7 @@ def main(model_params):
     df_cell = df_cell .drop_duplicates()
 
     # Only consider LTE (4G) for now
-    df_cell = df_cell.loc[df_cell['HOOFDSOORT'] == "UMTS"]
+    df_cell = df_cell.loc[df_cell['HOOFDSOORT'] == "LTE"]
 
     # Transform to wgs84
     df_cell['lat'],df_cell['lon'] =  Transformer.from_crs("EPSG:28992","EPSG:4979").transform(df_cell['X'],df_cell['Y'])
@@ -43,13 +43,10 @@ def main(model_params):
                           & (df_cell['lat'] >= model_params["bounding_box"][1]) & (df_cell['lat'] <= model_params["bounding_box"][3])]
 
     # drop rows that contain the partial string "Sci"
-    print(len(df_cell))
-    
     df_cell = df_cell[~df_cell['Hoofdstraalrichting'].str.contains('|'.join(["-"]))]
     df_cell['Hoofdstraalrichting'] = df_cell['Hoofdstraalrichting'].str.replace('\D', '')
     df_cell['Hoofdstraalrichting'] = df_cell['Hoofdstraalrichting'].str.replace(' ', '')
-    print(len(df_cell))
-    
+
     # Read in trajectories
     df_trajectory = pd.read_csv(model_params["trajectory_file"])
 
@@ -158,13 +155,14 @@ def main(model_params):
 
 if __name__ == '__main__':
     model_params = {
-        "start_date": '2023-05-01',
-        "end_date": '2023-05-31',
-        # "bounding_box":(4.2009,51.8561,4.9423,52.3926),
+        "start_date": '2023-05-10',
+        "end_date": '2023-06-10',
         "bounding_box":(4.2009,51.8561,4.5978,52.1149),
         "cell_file": './data/20191202131001.csv',
-        "trajectory_file": '././outputs/trajectories/output_trajectory.csv',
-        "output_file": '././outputs/trajectories/output_cell.csv',
+        "trajectory_file": '././outputs/trajectories2.0/Returners/Train/output_trajectory.csv',
+        "output_file": '././outputs/trajectories2.0/Returners/Train/sampling1/output_cell.csv',
+        # 1 for independent sampling, 2 for dependent on time and 3 for dependent on location
         "sampling_method": 1
     }
     main(model_params)
+

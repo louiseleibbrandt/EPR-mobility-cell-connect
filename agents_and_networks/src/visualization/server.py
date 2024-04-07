@@ -24,24 +24,14 @@ def agent_draw(agent):
     elif isinstance(agent, Walkway):
         portrayal["color"] = "#04D0CD"
     elif isinstance(agent, Building):
-        # if agent.visited:
-        #     if agent.function == 1:
-        #         portrayal["color"] = "Blue"
-        #     elif agent.function == 2:
-        #         portrayal["color"] = "Green"
-        #     else:
-        #         portrayal["color"] = "Red"
-        # else:
         portrayal["opacity"] = 0
     elif isinstance(agent, Commuter):
         if agent.status == "home":
             portrayal["color"] = "Green"
-        elif agent.status == "work":
-            portrayal["color"] = "Red"
         elif agent.status == "transport":
             portrayal["color"] = "Blue"
         else:
-            portrayal["color"] = "Grey"
+            portrayal["color"] = "Red"
         portrayal["radius"] = "5"
         portrayal["fillOpacity"] = 1
     return portrayal
