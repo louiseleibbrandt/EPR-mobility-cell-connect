@@ -15,10 +15,6 @@ In this model, EPR is run. All parameters can be chosen through the user interfa
 
 The GeoSpace contains multiple vector layers, including buildings, and a road network. More specifically, the road network is constructed from the polyline data and implemented by two underlying data structures: a topological network and a k-d tree. First, by treating road vertices as nodes and line segments as links, a topological network is created using the NetworkX and momepy libraries. NetworkX also provides several methods for shortest path computations (e.g., Dijkstra, A-star). Second, a k-d tree is built for all road vertices through the Scikit-learn library for the purpose of nearest vertex searches.
 
-### GeoAgent
-
-The commuters are the GeoAgents.
-
 ## How to set file locations
 
 Update config.py to the correct file locations. Street and building locations can be downloaded from https://download.geofabrik.de/europe/netherlands.html. 
