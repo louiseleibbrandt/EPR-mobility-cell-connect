@@ -19,6 +19,10 @@ The GeoSpace contains multiple vector layers, including buildings, and a road ne
 
 The commuters are the GeoAgents.
 
+## How to set file locations
+
+Update config.py to the correct file locations. Street and building locations can be downloaded from https://download.geofabrik.de/europe/netherlands.html. 
+
 ## How to run
 
 First install the dependencies:
@@ -45,6 +49,7 @@ python3 scripts/run_cell/simple.py
 ```
 
 Open your browser to [http://127.0.0.1:8521/](http://127.0.0.1:8521/) and press `Start`.
+
 
 ## License
 
