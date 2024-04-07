@@ -1,4 +1,4 @@
-Agents and Networks Model
+Trajectory and Connecting Cell Model
 =========================
 
 ![Delft Example](agents_and_networks/outputs/figures/epr_example.png)
