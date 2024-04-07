@@ -83,9 +83,8 @@ venv/
 examples/caching_and_replay/my_cache_file_path.cache
 
 # data
-agents_and_networks/data
+agents_and_networks/data/noord-holland
+agents_and_networks/data/coverage_model
 agents_and_networks/outputs/trajectories/output.csv
-agents_and_networks/scripts/timer.py
-agents_and_networks/scripts/exp.py
 *.csv
 *.txt

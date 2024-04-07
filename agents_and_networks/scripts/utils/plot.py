@@ -4,8 +4,8 @@ import geopandas as gpd
 import re
 
 # Start and End date for trajectory analysis
-start_date = '2023-05-10'
-end_date = '2023-06-20'
+start_date = '2023-06-01'
+end_date = '2023-06-02'
 
 df_cell = pd.read_csv('././outputs/trajectories2.0/Returners/Eval/sampling1/output_cell.csv')
 df_trajectory = pd.read_csv('././outputs/trajectories2.0/Returners/Eval/output_trajectory.csv')
@@ -19,43 +19,15 @@ df_cell = df_cell.loc[mask]
 
 
 bounding_box1 = (4.2009,51.8561,4.5978,52.1149)
-# bounding_box1 = (4.2490,52.0035,4.4138,52.0934)
-# bounding_box2 = (4.8582,52.3478,4.9423,52.3926)
 
-
-# bounding_box = (min(bounding_box1[0],bounding_box2[0]),min(bounding_box1[1],bounding_box2[1]),
-#                              max(bounding_box1[2],bounding_box2[2]),max(bounding_box1[3],bounding_box2[3]))    
-
-walkway_file = f"data/zuid-holland/gis_osm_roads_free_1"
-walkway_file_trip = f"data/noord-holland/gis_osm_roads_free_1"
-
-
-
-                                                  
-
-# files = [walkway_file,walkway_file_trip]
-# boxes = [bounding_box1,bounding_box2]
-# walkway_df = gpd.GeoDataFrame(pd.concat([gpd.read_file(i,j) for (i,j) in zip(files,boxes)], 
-#                         ignore_index=True))
-
-
-
-# motorway_df = gpd.GeoDataFrame(pd.concat([gpd.read_file(i,bounding_box) for i in files], 
-#                         ignore_index=True))
-# # motorway_df = motorway_df[motorway_df['maxspeed'].isin([100,80,60])]
-# motorway_df = motorway_df[motorway_df['fclass'].isin(['motorway','motorway_link','secondary'])]
-
-# walkway_df = gpd.GeoDataFrame(pd.concat([walkway_df,motorway_df]))
+walkway_file = f"data/zuid-holland/gis_osm_roads_free_1.zip"
+walkway_file_trip = f"data/noord-holland/gis_osm_roads_free_1.zip"
 
 fig, (ax1,ax2,ax3) = plt.subplots(1,3)
 walkway_df = (
             gpd.read_file(walkway_file, bounding_box1)
         )
 
-# files = [walkway_file,walkway_file_trip]
-
-# walkway_df = gpd.GeoDataFrame(pd.concat([gpd.read_file(i,bounding_box) for i in files], 
-#                         ignore_index=True))
 walkway_df.plot(ax=ax1,color='black',linewidth=0.5)
 walkway_df.plot(ax=ax2,color='black',linewidth=0.5)
 walkway_df.plot(ax=ax3,color='black',linewidth=0.5)
