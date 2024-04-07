@@ -1,19 +1,19 @@
 import pandas as pd
 import numpy as np
 import re
-
 import csv
+
 from pyproj import Transformer
-from scipy.stats import poisson
 from datetime import datetime, timedelta
-
 from math import atan2,degrees
-
-
+from config import BOUNDING_BOX, BOUNDING_INCREASE, START_DATE, END_DATE, OUTPUT_TRAJECTORY_FILE, OUTPUT_CELL_FILE, CELL_FILE
 
 def main(model_params):
     # Retrieve start date
     start = datetime.strptime(model_params["start_date"],"%Y-%m-%d")
+
+    # Expand bounding box size
+    increase = BOUNDING_INCREASE
 
     # Setup output file
     output_file = open(model_params["output_file"], 'w')
@@ -23,8 +23,8 @@ def main(model_params):
     # Read in cell towers, transform lon/lat, limit to bounding box, format the orientation data
     df_cell = pd.read_csv(model_params["cell_file"])
     df_cell['lon'],df_cell['lat'] =  Transformer.from_crs("EPSG:28992","EPSG:4979").transform(df_cell['X'],df_cell['Y'])
-    df_cell = df_cell.loc[(df_cell['lat'] >= model_params["bounding_box"][0]) & (df_cell['lat'] <= model_params["bounding_box"][2]) 
-                          & (df_cell['lon'] >= model_params["bounding_box"][1]) & (df_cell['lon'] <= model_params["bounding_box"][3])]
+    df_cell = df_cell.loc[(df_cell['lat'] >= model_params["bounding_box"][0] - increase) & (df_cell['lat'] <= model_params["bounding_box"][2] + increase) 
+                          & (df_cell['lon'] >= model_params["bounding_box"][1] - increase) & (df_cell['lon'] <= model_params["bounding_box"][3]) + increase]
     df_cell['Hoofdstraalrichting'] = df_cell['Hoofdstraalrichting'].str.replace('\D', '')
     df_cell['Hoofdstraalrichting'] = df_cell['Hoofdstraalrichting'].str.replace(' ', '')
     
@@ -88,11 +88,11 @@ def main(model_params):
 
 if __name__ == '__main__':
     model_params = {
-        "start_date": '2023-05-01',
-        "end_date": '2023-06-31',
-        "bounding_box":(4.2009,51.8561,4.5978,52.1149),
-        "cell_file": './data/20191202131001.csv',
-        "trajectory_file": '././outputs/trajectories/output_trajectory.csv',
-        "output_file": '././outputs/trajectories/output_cell.csv',
+        "start_date": START_DATE,
+        "end_date": END_DATE,
+        "bounding_box": BOUNDING_BOX,
+        "cell_file": CELL_FILE,
+        "trajectory_file": OUTPUT_TRAJECTORY_FILE,
+        "output_file": OUTPUT_CELL_FILE,
     }
     main(model_params)

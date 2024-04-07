@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import uuid
-from random import randrange
 
 import mesa
 import mesa_geo as mg

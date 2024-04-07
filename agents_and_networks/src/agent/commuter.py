@@ -2,7 +2,6 @@ from __future__ import annotations
 import math
 
 import random
-
 import mesa
 import mesa_geo as mg
 import pyproj

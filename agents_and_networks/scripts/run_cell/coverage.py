@@ -2,13 +2,13 @@ import pickle
 import pandas as pd
 import numpy as np
 import re
-
 import csv
+
 from pyproj import Transformer
 from datetime import datetime, timedelta
-from telcell.data.models import Measurement, Point
-from telcell.data.models import RDPoint
+from telcell.data.models import Measurement, Point,RDPoint
 from random import choices
+from config import BOUNDING_BOX, BOUNDING_INCREASE, START_DATE, END_DATE, OUTPUT_TRAJECTORY_FILE, OUTPUT_CELL_FILE, CELL_FILE, COVERAGE_FILE
 
 
 """
@@ -18,6 +18,9 @@ def main(model_params):
 
     # Retrieve start date
     start = datetime.strptime(model_params["start_date"],"%Y-%m-%d")
+
+    # Expand bounding box size
+    increase = BOUNDING_INCREASE
 
     # Setup output file
     output_file = open(model_params["output_file"], 'w')
@@ -39,8 +42,8 @@ def main(model_params):
     df_cell['lat'],df_cell['lon'] =  Transformer.from_crs("EPSG:28992","EPSG:4979").transform(df_cell['X'],df_cell['Y'])
  
     # Only keep cell towers in bounding box
-    df_cell = df_cell.loc[(df_cell['lon'] >= model_params["bounding_box"][0]) & (df_cell['lon'] <= model_params["bounding_box"][2]) 
-                          & (df_cell['lat'] >= model_params["bounding_box"][1]) & (df_cell['lat'] <= model_params["bounding_box"][3])]
+    df_cell = df_cell.loc[(df_cell['lon'] >= (model_params["bounding_box"][0]-increase)) & (df_cell['lon'] <= model_params["bounding_box"][2]+increase) 
+                          & (df_cell['lat'] >= model_params["bounding_box"][1]-increase) & (df_cell['lat'] <= model_params["bounding_box"][3]+increase)]
 
     # drop rows that contain the partial string "Sci"
     df_cell = df_cell[~df_cell['Hoofdstraalrichting'].str.contains('|'.join(["-"]))]
@@ -63,7 +66,7 @@ def main(model_params):
     agents = sorted(pd.unique(df_trajectory['owner']))  
     
     # Load in coverage model, we utilize the model with mnc 8 and 0 time difference
-    coverage_models = pickle.load(open('././data/coverage_model', 'rb'))
+    coverage_models = pickle.load(open(model_params["coverage_file"], 'rb'))
     print(coverage_models)
     model = coverage_models[('16',(0, 0))]
 
@@ -155,12 +158,13 @@ def main(model_params):
 
 if __name__ == '__main__':
     model_params = {
-        "start_date": '2023-05-10',
-        "end_date": '2023-06-10',
-        "bounding_box":(4.2009,51.8561,4.5978,52.1149),
-        "cell_file": './data/20191202131001.csv',
-        "trajectory_file": '././outputs/trajectories2.0/Returners/Train/output_trajectory.csv',
-        "output_file": '././outputs/trajectories2.0/Returners/Train/sampling1/output_cell.csv',
+        "start_date": START_DATE,
+        "end_date": END_DATE,
+        "bounding_box":BOUNDING_BOX,
+        "cell_file": CELL_FILE,
+        "coverage_file": COVERAGE_FILE,
+        "trajectory_file": OUTPUT_TRAJECTORY_FILE,
+        "output_file": OUTPUT_CELL_FILE,
         # 1 for independent sampling, 2 for dependent on time and 3 for dependent on location
         "sampling_method": 1
     }

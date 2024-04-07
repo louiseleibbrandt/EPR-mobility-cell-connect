@@ -1,5 +1,6 @@
 import mesa
 import mesa_geo as mg
+from config import BOUNDING_BOX, START_DATE, BUILDING_FILE, STREET_FILE, OUTPUT_TRAJECTORY_FILE
 from src.model.model import AgentsAndNetworks
 from src.visualization.server import (
     agent_draw,
@@ -16,8 +17,8 @@ if __name__ == "__main__":
 
     model_params = {
         "data_crs": region_params["data_crs"],
-        "start_date": '2023-05-01',
-        "bounding_box":(4.3480,52.0036,4.3741,52.0185),
+        "start_date": START_DATE,
+        "bounding_box":BOUNDING_BOX,
         "num_commuters": mesa.visualization.NumberInput(
             "Number of Agents",
             value=10,
@@ -62,9 +63,9 @@ if __name__ == "__main__":
             "Exponent in probability of exploration",
             value=2,
         ),
-        "buildings_file": f"data/zuid-holland/gis_osm_buildings_a_free_1.zip",
-        "walkway_file": f"data/zuid-holland/gis_osm_roads_free_1.zip",
-        "output_file":f"././outputs/trajectories/output_trajectory.csv",
+        "buildings_file": BUILDING_FILE,
+        "walkway_file": STREET_FILE,
+        "output_file": OUTPUT_TRAJECTORY_FILE,
     }
 
     map_element = mg.visualization.MapModule(agent_draw, map_height=600, map_width=600)

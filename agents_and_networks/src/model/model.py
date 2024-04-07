@@ -96,7 +96,7 @@ class AgentsAndNetworks(mesa.Model):
         self.step_duration = step_duration
         self.positions_to_write = []
         self.positions = []
-
+        self.output_file = output_file
         Commuter.SPEED_WALK = commuter_speed_walk * step_duration  # meters per tick 
         Commuter.ALPHA = alpha
         Commuter.TAU_jump = tau_jump
@@ -120,7 +120,7 @@ class AgentsAndNetworks(mesa.Model):
         
         self.writing_id_trajectory = 0
         self._create_commuters() 
-        output_file_trajectory = open(output_file, 'w')
+        output_file_trajectory = open(self.output_file, 'w')
         csv.writer(output_file_trajectory).writerow(['id','owner','timestamp','cellinfo.wgs84.lon','cellinfo.wgs84.lat','status'])    
 
         self.datacollector = mesa.DataCollector(
@@ -221,7 +221,7 @@ class AgentsAndNetworks(mesa.Model):
                 
     
     def __write_to_file(self) -> None:
-        output_file = open('././outputs/trajectories/output_trajectory.csv', 'a')
+        output_file = open(self.output_file, 'a')
         output_writer = csv.writer(output_file)
         for pos in self.positions_to_write:
             lon,lat = Transformer.from_crs("EPSG:3857","EPSG:4326").transform(pos[1],pos[2])
