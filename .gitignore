@@ -77,13 +77,23 @@ target/
 .dmypy.json
 dmypy.json
 
+# Mypy cache
+.mypy_cache/
+
+**/*.pkl
+
 # Virtual environment
 venv/
 
 examples/caching_and_replay/my_cache_file_path.cache
 
 # data
-agents_and_networks/data
+agents_and_networks/data/noord-holland
+agents_and_networks/data/zuid-holland
+agents_and_networks/data/coverage_model
+
 agents_and_networks/outputs/trajectories/output.csv
+
 *.csv
 *.txt
+!agents_and_networks/data/20191202131001.csv
