@@ -22,7 +22,7 @@ Update config.py to include the correct file locations.
 Street and building locations (in the netherlands) can be downloaded from https://download.geofabrik.de/europe/netherlands.html. 
 
 ## How to run
-First install the dependencies:
+From the agents_and_networks folder, first install the dependencies:
 
 ```bash
 python3 -m pip install -r requirements.txt
