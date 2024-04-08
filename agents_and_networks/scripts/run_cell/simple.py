@@ -76,8 +76,8 @@ def main(model_params):
                     x_old = x
                     y_old = y
                 agent = re.sub("[^0-9]", "", agents[i])
-                if (agents_df['status'].iloc[index-1] == "transport"):
-                    output_writer.writerow([writing_id, f"Agent{agent}", f"{agent}_{phone+1}", 
+
+                output_writer.writerow([writing_id, f"Agent{agent}", f"{agent}_{phone+1}", 
                                 start + timedelta(seconds = p_time), cellx, celly, degree,"0-0-0"])
                 
                 p_time += np.random.default_rng().exponential(scale=3600)
