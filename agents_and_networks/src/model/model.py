@@ -4,6 +4,7 @@ import mesa
 import mesa_geo as mg
 import pandas as pd
 import csv
+import random
 
 from shapely.geometry import Point
 from pyproj import Transformer
@@ -162,8 +163,11 @@ class AgentsAndNetworks(mesa.Model):
     def _load_buildings_from_file(
         self, buildings_file: str, crs: str
     ) -> None:
-        # read in buildings from normal bounding box
-        buildings_df = gpd.read_file(buildings_file, bbox=(self.bounding_box))
+        # read in buildings from normal bounding box. If it is a large file>500000 buildings~half of zuid holland
+        # then there will be 1000 buildings, for smaller bounding boxes it will be less items.
+        random_integer = random.randint(400,600)
+        buildings_df = gpd.read_file(buildings_file, bbox=(self.bounding_box),rows=slice(0,1000*random_integer+1,random_integer))
+
         # sample buildings for speedup
         # buildings_df = buildings_df.sample(frac =  0.01)
         print("number buildings: ",len(buildings_df))
