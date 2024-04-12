@@ -67,7 +67,7 @@ def main(model_params):
     
     # Load in coverage model, we utilize the model with mnc 8 and 0 time difference
     coverage_models = pickle.load(open(model_params["coverage_file"], 'rb'))
-    print(coverage_models)
+
     model = coverage_models[('16',(0, 0))]
 
     # Initialize variables 

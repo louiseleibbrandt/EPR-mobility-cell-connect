@@ -35,7 +35,6 @@ walkway_df.plot(ax=ax2,color='black',linewidth=0.5)
 walkway_df.plot(ax=ax3,color='black',linewidth=0.5)
 
 agents = sorted(pd.unique(df_cell['owner']))
-print(agents)
 
 for i in range(len(agents)):
     agents_cell = df_cell[df_cell['owner'].isin([agents[i]])] 
