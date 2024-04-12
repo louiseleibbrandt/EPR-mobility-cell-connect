@@ -6,8 +6,7 @@ Trajectory and Connecting Cell Model
 
 
 ## Summary
-
-This is an implementation is based on the [GMU-Social Model](https://github.com/abmgis/abmgis/blob/master/Chapter08-Networks/Models/GMU-Social/README.md) in Python, using [Mesa](https://github.com/projectmesa/mesa) and [Mesa-Geo](https://github.com/projectmesa/mesa-geo). It is built upon the agents and networks example [Agent and Networks](https://github.com/projectmesa/mesa-examples/tree/main/gis/agents_and_networks).
+In this repository, we include the tool and datasets used in publication ... The datasets used in our analysis, including the baseline and three behavior variations, can be found in resources. The tool used can be found in the agents_and_networks folder. This implementation is based on the [GMU-Social Model](https://github.com/abmgis/abmgis/blob/master/Chapter08-Networks/Models/GMU-Social/README.md) in Python, using [Mesa](https://github.com/projectmesa/mesa) and [Mesa-Geo](https://github.com/projectmesa/mesa-geo). It is built upon the agents and networks example [Agent and Networks](https://github.com/projectmesa/mesa-examples/tree/main/gis/agents_and_networks). 
 
 ### Trajectory
 In this model, we generate mobility trajectories using EPR. All parameters can be chosen through the user interface and correspond to the truncated power law distributions modeling jump length and waiting time in the CTRW. The exploration and preferential return probabilities can also be specified. Agents' commute routes can be found as the shortest path between entrances of their home and desired destination. These commute routes are segmented according to agents' walking speed. In this way, the movements of agents are constrained on the road network.
